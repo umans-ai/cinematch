@@ -9,9 +9,3 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
-
-variable "preview_number" {
-  description = "Preview environment number (for preview workspaces)"
-  type        = string
-  default     = ""
-}

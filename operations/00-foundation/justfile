@@ -1,0 +1,26 @@
+default:
+    @just --list
+
+# Initialize Terraform
+init:
+    terraform init
+
+# Plan changes
+plan:
+    terraform plan
+
+# Apply changes
+apply:
+    terraform apply
+
+# Destroy foundation (DANGER: destroys everything)
+destroy:
+    terraform destroy
+
+# Format terraform
+fmt:
+    terraform fmt
+
+# Validate
+validate:
+    terraform validate

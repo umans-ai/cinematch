@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, closed]
 
 env:
   AWS_REGION: eu-west-1
@@ -49,81 +50,19 @@ jobs:
       - name: Frontend typecheck
         run: cd frontend && npm run typecheck
 
-  build-and-deploy:
+  deploy:
     needs: check
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsCinematchRole
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Get secrets from AWS Secrets Manager
-        id: secrets
-        run: |
-          echo "ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id cinemask/production --query 'SecretString' --output text | jq -r '.account_id')" >> $GITHUB_ENV
-          echo "ECR_BACKEND=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-backend" >> $GITHUB_ENV
-          echo "ECR_FRONTEND=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-frontend" >> $GITHUB_ENV
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push backend image
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd backend
-          docker build -t $ECR_BACKEND:$IMAGE_TAG -t $ECR_BACKEND:latest .
-          docker push $ECR_BACKEND:$IMAGE_TAG
-          docker push $ECR_BACKEND:latest
-
-      - name: Build, tag, and push frontend image
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd frontend
-          docker build -t $ECR_FRONTEND:$IMAGE_TAG -t $ECR_FRONTEND:latest .
-          docker push $ECR_FRONTEND:$IMAGE_TAG
-          docker push $ECR_FRONTEND:latest
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: |
-          cd operations
-          terraform init
-
-      - name: Terraform Apply
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd operations
-          terraform workspace select production
-          terraform apply -auto-approve -var="image_tag=$IMAGE_TAG"
-
-      - name: Output URL
-        run: |
-          cd operations
-          echo "Deployed to: $(terraform output -raw url)"
-
-  preview:
-    needs: check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.action != 'closed')
     permissions:
       id-token: write
       contents: read
       pull-requests: write
+    environment:
+      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -137,45 +76,74 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: ${{ secrets.AWS_ACCOUNT_ID }}
 
-      - name: Build and push images
-        env:
-          IMAGE_TAG: pr-${{ github.event.number }}
-          PR_NUMBER: ${{ github.event.number }}
+      - name: Determine workspace
+        id: workspace
+        run: |
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "name=production" >> $GITHUB_OUTPUT
+            echo "image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "domain=demo.cinematch.umans.ai" >> $GITHUB_OUTPUT
+          else
+            echo "name=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "image_tag=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "domain=demo-pr-${{ github.event.number }}.cinematch.umans.ai" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push backend
         run: |
           cd backend
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-backend:$IMAGE_TAG .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-backend:$IMAGE_TAG
-          cd ../frontend
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-frontend:$IMAGE_TAG .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-frontend:$IMAGE_TAG
+          docker build \
+            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-backend:${{ steps.workspace.outputs.image_tag }} \
+            .
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-backend:${{ steps.workspace.outputs.image_tag }}
+
+      - name: Build and push frontend
+        run: |
+          cd frontend
+          docker build \
+            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-frontend:${{ steps.workspace.outputs.image_tag }} \
+            .
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-frontend:${{ steps.workspace.outputs.image_tag }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
 
-      - name: Deploy Preview
-        env:
-          IMAGE_TAG: pr-${{ github.event.number }}
-          PR_NUMBER: ${{ github.event.number }}
+      - name: Deploy to environment
+        id: deploy
         run: |
-          cd operations
+          cd operations/01-service
           terraform init
-          terraform workspace select preview-$PR_NUMBER || terraform workspace new preview-$PR_NUMBER
-          terraform apply -auto-approve -var="image_tag=$IMAGE_TAG" -var="preview_number=$PR_NUMBER"
+
+          # Select or create workspace
+          terraform workspace select ${{ steps.workspace.outputs.name }} || terraform workspace new ${{ steps.workspace.outputs.name }}
+
+          # Apply
+          terraform apply -auto-approve -var="image_tag=${{ steps.workspace.outputs.image_tag }}"
+
+          # Output URL
+          echo "url=https://${{ steps.workspace.outputs.domain }}" >> $GITHUB_OUTPUT
+          echo "Deployed to: https://${{ steps.workspace.outputs.domain }}"
 
       - name: Comment PR
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
         uses: actions/github-script@v7
         with:
           script: |
-            const url = `https://demo-pr-${{ github.event.number }}.cinematch.umans.ai`;
+            const workspace = 'pr-${{ github.event.number }}';
+            const url = '${{ steps.deploy.outputs.url }}';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🚀 Preview deployed: ${url}`
+              body: `🚀 Preview deployed: ${url}\n\nWorkspace: \`${workspace}\``
             });
 
-  cleanup-preview:
+  destroy-preview:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     permissions:
@@ -194,16 +162,20 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Destroy Preview
-        env:
-          PR_NUMBER: ${{ github.event.number }}
+      - name: Destroy preview
         run: |
-          cd operations
+          cd operations/01-service
           terraform init
-          # Switch to preview workspace
-          terraform workspace select preview-$PR_NUMBER || exit 0
-          # Destroy resources
-          terraform destroy -auto-approve -var="preview_number=$PR_NUMBER" || true
-          # Switch back to production and delete workspace
-          terraform workspace select production
-          terraform workspace delete preview-$PR_NUMBER || true
+
+          WORKSPACE="pr-${{ github.event.number }}"
+
+          # Check if workspace exists
+          if terraform workspace list | grep -q "$WORKSPACE"; then
+            terraform workspace select "$WORKSPACE"
+            terraform destroy -auto-approve
+            terraform workspace select production
+            terraform workspace delete "$WORKSPACE"
+            echo "Preview environment $WORKSPACE destroyed"
+          else
+            echo "Workspace $WORKSPACE does not exist, skipping"
+          fi

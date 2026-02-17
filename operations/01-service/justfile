@@ -1,0 +1,34 @@
+default:
+    @just --list
+
+# Initialize Terraform
+init:
+    terraform init
+
+# Select workspace
+workspace name:
+    terraform workspace select {{name}} || terraform workspace new {{name}}
+
+# Plan changes for current workspace
+plan:
+    terraform plan
+
+# Apply changes for current workspace
+apply:
+    terraform apply
+
+# Destroy current workspace (use with caution)
+destroy:
+    terraform destroy
+
+# Deploy with specific image tag
+deploy image_tag:
+    terraform apply -var="image_tag={{image_tag}}"
+
+# Format terraform
+fmt:
+    terraform fmt
+
+# Validate
+validate:
+    terraform validate

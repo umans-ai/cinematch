@@ -1,40 +1,43 @@
 default:
-    @just --list
+    @echo "CineMatch Infrastructure"
+    @echo ""
+    @echo "Usage:"
+    @echo "  just foundation/<cmd>    # Manage foundation layer (VPC, ECS Cluster, ECR)"
+    @echo "  just service/<cmd>       # Manage service layer (ALB, ECS Services)"
+    @echo "  just deploy <tag>        # Deploy new image tag to production"
+    @echo "  just deploy-preview <tag> <name>  # Deploy to preview environment"
+    @echo ""
+    @echo "Examples:"
+    @echo "  just foundation/plan     # Plan foundation changes"
+    @echo "  just service/workspace preview-123  # Create/switch to preview workspace"
+    @echo "  just service/deploy abc123  # Deploy image tag abc123"
 
-# Initialize Terraform
-init:
-    terraform init
+# Foundation shortcuts
+foundation/cmd:
+    cd 00-foundation && just {{cmd}}
 
-# Select or create workspace
-workspace name:
-    terraform workspace select {{name}} || terraform workspace new {{name}}
+# Service shortcuts
+service/cmd:
+    cd 01-service && just {{cmd}}
 
-# Plan changes
-plan workspace="production" preview_number="":
-    just workspace {{workspace}}
-    terraform plan -var="preview_number={{preview_number}}"
+# Deploy to production
+deploy image_tag:
+    cd 01-service && terraform workspace select production
+    cd 01-service && terraform apply -var="image_tag={{image_tag}}"
 
-# Apply changes
-apply workspace="production" preview_number="":
-    just workspace {{workspace}}
-    terraform apply -var="preview_number={{preview_number}}"
+# Deploy to preview environment
+deploy-preview image_tag name:
+    cd 01-service && terraform workspace select {{name}} || terraform workspace new {{name}}
+    cd 01-service && terraform apply -var="image_tag={{image_tag}}"
 
 # Destroy preview environment
-destroy-preview preview_number:
-    just workspace preview-{{preview_number}}
-    terraform destroy -var="preview_number={{preview_number}}"
-    terraform workspace select production
-    terraform workspace delete preview-{{preview_number}}
+destroy-preview name:
+    cd 01-service && terraform workspace select {{name}}
+    cd 01-service && terraform destroy
+    cd 01-service && terraform workspace select production
+    cd 01-service && terraform workspace delete {{name}}
 
-# Show outputs
-output workspace="production":
-    just workspace {{workspace}}
-    terraform output
-
-# Format terraform
-fmt:
-    terraform fmt -recursive
-
-# Validate
-validate:
-    terraform validate
+# Initialize all
+init:
+    cd 00-foundation && terraform init
+    cd 01-service && terraform init
