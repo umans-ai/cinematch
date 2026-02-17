@@ -13,16 +13,6 @@ output "certificate_arn" {
   value       = aws_acm_certificate_validation.cinematch.certificate_arn
 }
 
-output "ecs_cluster_id" {
-  description = "ECS Cluster ID"
-  value       = aws_ecs_cluster.cinematch.id
-}
-
-output "ecs_cluster_name" {
-  description = "ECS Cluster name"
-  value       = aws_ecs_cluster.cinematch.name
-}
-
 output "ecr_backend_url" {
   description = "Backend ECR repository URL"
   value       = aws_ecr_repository.backend.repository_url

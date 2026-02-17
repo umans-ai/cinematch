@@ -20,8 +20,8 @@ Tinder-style movie picker for couples. Stop scrolling, start watching.
 │   ├── app/          # App router pages
 │   └── components/   # React components
 ├── operations/        # Terraform infrastructure
-│   ├── 00-foundation/   # Shared resources (VPC, ECS, ECR, cert)
-│   └── 01-service/      # Per-environment resources (ALB, services)
+│   ├── 00-foundation/   # Shared resources (VPC, ECR, cert)
+│   └── 01-service/      # Per-environment resources (ALB, ECS cluster, services)
 ├── docs/
 │   ├── architecture/decisions/   # ADRs
 │   └── backlog/                  # Increment tracking
@@ -36,7 +36,6 @@ Applied manually, contains resources shared across ALL environments:
 | File | Purpose |
 |------|---------|
 | `vpc.tf` | VPC (10.1.0.0/16), subnets, IGW, route tables |
-| `ecs.tf` | ECS Cluster "cinematch" (shared) |
 | `ecr.tf` | ECR repositories for backend/frontend images |
 | `cert.tf` | ACM certificate for *.cinematch.umans.ai |
 
@@ -48,6 +47,7 @@ Applied by CI/CD for each environment (production, pr-123, etc.):
 | File | Purpose |
 |------|---------|
 | `alb.tf` | Application Load Balancer |
+| `ecs-cluster.tf` | ECS cluster (per environment) |
 | `ecs-services.tf` | ECS services and task definitions |
 | `security-groups.tf` | Security groups for ALB and ECS |
 | `route53.tf` | DNS records per workspace |
@@ -67,9 +67,9 @@ Each environment is a Terraform workspace:
 
 Isolation guarantees:
 - ✅ Dedicated ALB per environment
+- ✅ Dedicated ECS cluster per environment
 - ✅ Dedicated security groups per environment
-- ✅ Separate ECS services per environment
-- ✅ Shared: VPC, ECS Cluster, ECR, ACM certificate
+- ✅ Shared: VPC, ECR, ACM certificate
 
 ## Isolation from llm-gateway
 
@@ -136,5 +136,5 @@ See `docs/backlog/` for planned increments:
 
 - **SQLite for MVP**: Speed of development, migrate to PostgreSQL later
 - **Workspace-based environments**: Simple, effective isolation
-- **Shared ECS Cluster**: Cost-effective, still isolated services
+- **Dedicated ECS Cluster per environment**: Complete isolation
 - **Separate VPC**: Maximum isolation from llm-gateway
