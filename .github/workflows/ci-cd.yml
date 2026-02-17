@@ -30,7 +30,7 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install ruff mypy pytest httpx
+          pip install ruff mypy pytest httpx==0.27.2
 
       - name: Backend lint
         run: cd backend && ruff check app/
