@@ -15,6 +15,30 @@ Run test and guide next step based on result.
 
 ## TDD Cycle
 
+### 0. Test List (planning phase)
+
+Before writing any code, create a test list in the increment file:
+
+```markdown
+## Implementation Plan
+
+### Phase 1: Basic setup
+- [ ] test health endpoint returns 200
+- [ ] test create room generates 4-digit code
+- [ ] test join room adds participant
+
+### Phase 2: Core features
+- [ ] test get movies returns static list
+- [ ] test submit vote records like/dislike
+- [ ] test match found when both like same movie
+```
+
+**Rules:**
+- Write test list BEFORE any implementation
+- Tests should be small and focused
+- Each test drives one piece of behavior
+- Check off tests as you complete them (red-green-refactor)
+
 ### 1. Red (write failing test)
 ```
 /tdd-check tests/test_feature.py
