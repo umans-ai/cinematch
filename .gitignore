@@ -50,7 +50,7 @@ out/
 .terraform/
 *.tfstate
 *.tfstate.*
-.terraform.lock.hcl
+# Note: .terraform.lock.hcl is committed to ensure provider version consistency
 
 # Database
 *.db
