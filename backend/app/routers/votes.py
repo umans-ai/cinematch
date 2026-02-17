@@ -42,7 +42,7 @@ def create_vote(
 
     if existing:
         # Update existing vote
-        existing.liked = vote.liked
+        existing.liked = vote.liked  # type: ignore
         db.commit()
         db.refresh(existing)
         return existing
@@ -89,7 +89,7 @@ def get_matches(code: str, db: Session = Depends(get_db)):
         if set(participant_ids).issubset(set(voter_ids)):
             matches.append(MatchResponse(
                 movie=movie,
-                participants=[p.name for p in participants]
+                participants=[p.name for p in participants]  # type: ignore
             ))
 
     return matches
