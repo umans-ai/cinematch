@@ -5,7 +5,7 @@ import uuid
 
 from ..database import get_db
 from ..models import Room, Participant
-from ..schemas import RoomCreate, RoomResponse, ParticipantCreate, ParticipantResponse
+from ..schemas import RoomResponse, ParticipantCreate, ParticipantResponse
 
 router = APIRouter()
 

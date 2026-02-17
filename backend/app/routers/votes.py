@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from typing import List
 
 from ..database import get_db
@@ -81,7 +80,7 @@ def get_matches(code: str, db: Session = Depends(get_db)):
         votes = db.query(Vote).filter(
             Vote.room_id == room.id,
             Vote.movie_id == movie.id,
-            Vote.liked == True
+            Vote.liked.is_(True)
         ).all()
 
         voter_ids = [v.participant_id for v in votes]

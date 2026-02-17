@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..database import get_db
-from ..models import Movie, Room, Participant, Vote
+from ..models import Movie, Room, Vote
 from ..schemas import MovieResponse
 
 router = APIRouter()
