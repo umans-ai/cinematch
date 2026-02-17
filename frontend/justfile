@@ -1,0 +1,22 @@
+dev:
+    npm run dev
+
+build:
+    npm run build
+
+start:
+    npm start
+
+lint:
+    npm run lint
+
+typecheck:
+    npm run typecheck
+
+check: lint typecheck
+
+docker-build:
+    docker build -t cinematch-frontend .
+
+docker-run:
+    docker run -p 3000:3000 cinematch-frontend

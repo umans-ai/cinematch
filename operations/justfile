@@ -1,0 +1,40 @@
+default:
+    @just --list
+
+# Initialize Terraform
+init:
+    terraform init
+
+# Select or create workspace
+workspace name:
+    terraform workspace select {{name}} || terraform workspace new {{name}}
+
+# Plan changes
+plan workspace="production" preview_number="":
+    just workspace {{workspace}}
+    terraform plan -var="preview_number={{preview_number}}"
+
+# Apply changes
+apply workspace="production" preview_number="":
+    just workspace {{workspace}}
+    terraform apply -var="preview_number={{preview_number}}"
+
+# Destroy preview environment
+destroy-preview preview_number:
+    just workspace preview-{{preview_number}}
+    terraform destroy -var="preview_number={{preview_number}}"
+    terraform workspace select production
+    terraform workspace delete preview-{{preview_number}}
+
+# Show outputs
+output workspace="production":
+    just workspace {{workspace}}
+    terraform output
+
+# Format terraform
+fmt:
+    terraform fmt -recursive
+
+# Validate
+validate:
+    terraform validate

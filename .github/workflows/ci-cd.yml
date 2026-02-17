@@ -1,0 +1,198 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_BACKEND: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-backend
+  ECR_FRONTEND: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/cinematch-frontend
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install ruff mypy pytest
+
+      - name: Backend lint
+        run: cd backend && ruff check app/
+
+      - name: Backend typecheck
+        run: cd backend && mypy app/
+
+      - name: Backend test
+        run: cd backend && pytest tests/ -v
+
+      - name: Install Node dependencies
+        run: cd frontend && npm ci
+
+      - name: Frontend lint
+        run: cd frontend && npm run lint
+
+      - name: Frontend typecheck
+        run: cd frontend && npm run typecheck
+
+  build-and-deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push backend image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd backend
+          docker build -t $ECR_BACKEND:$IMAGE_TAG -t $ECR_BACKEND:latest .
+          docker push $ECR_BACKEND:$IMAGE_TAG
+          docker push $ECR_BACKEND:latest
+
+      - name: Build, tag, and push frontend image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd frontend
+          docker build -t $ECR_FRONTEND:$IMAGE_TAG -t $ECR_FRONTEND:latest .
+          docker push $ECR_FRONTEND:$IMAGE_TAG
+          docker push $ECR_FRONTEND:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: |
+          cd operations
+          terraform init
+
+      - name: Terraform Apply
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd operations
+          terraform workspace select production
+          terraform apply -auto-approve -var="image_tag=$IMAGE_TAG"
+
+      - name: Output URL
+        run: |
+          cd operations
+          echo "Deployed to: $(terraform output -raw url)"
+
+  preview:
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        env:
+          IMAGE_TAG: pr-${{ github.event.number }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          cd backend
+          docker build -t $ECR_BACKEND:$IMAGE_TAG .
+          docker push $ECR_BACKEND:$IMAGE_TAG
+          cd ../frontend
+          docker build -t $ECR_FRONTEND:$IMAGE_TAG .
+          docker push $ECR_FRONTEND:$IMAGE_TAG
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Deploy Preview
+        env:
+          IMAGE_TAG: pr-${{ github.event.number }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          cd operations
+          terraform init
+          terraform workspace select preview-$PR_NUMBER || terraform workspace new preview-$PR_NUMBER
+          terraform apply -auto-approve -var="image_tag=$IMAGE_TAG" -var="preview_number=$PR_NUMBER"
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = `https://demo-pr-${{ github.event.number }}.cinematch.umans.ai`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployed: ${url}`
+            });
+
+  cleanup-preview:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Destroy Preview
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          cd operations
+          terraform init
+          just destroy-preview $PR_NUMBER
