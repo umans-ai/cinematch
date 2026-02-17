@@ -1,10 +1,6 @@
 # ECS Services and Task Definitions
 # Per-environment ECS services (frontend and backend)
 
-locals {
-  is_production = terraform.workspace == "production"
-}
-
 # Backend Task Definition
 resource "aws_ecs_task_definition" "backend" {
   family                   = "cinematch-backend-${terraform.workspace}"
@@ -28,7 +24,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "sqlite:///tmp/cinematch.db"
+          value = "sqlite:////tmp/cinematch.db"
         },
         {
           name  = "CORS_ORIGINS"
@@ -105,7 +101,7 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8000
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.https]
 
   deployment_circuit_breaker {
     enable   = true
@@ -133,7 +129,7 @@ resource "aws_ecs_service" "frontend" {
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.https]
 
   deployment_circuit_breaker {
     enable   = true

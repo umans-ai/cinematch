@@ -60,11 +60,13 @@ resource "aws_lb_target_group" "frontend" {
   }
 }
 
-# ALB Listener - HTTP (no HTTPS in MVP, can add later)
-resource "aws_lb_listener" "http" {
+# ALB Listener - HTTPS (primary)
+resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.cinematch.arn
-  port              = 80
-  protocol          = "HTTP"
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = data.terraform_remote_state.foundation.outputs.certificate_arn
 
   default_action {
     type             = "forward"
@@ -72,9 +74,25 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+# ALB Listener - HTTP (redirects to HTTPS)
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.cinematch.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
 # Backend API path routing
 resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 100
 
   action {

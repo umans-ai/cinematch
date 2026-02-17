@@ -46,6 +46,7 @@ class Vote(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     room = relationship("Room", back_populates="votes")
+    movie = relationship("Movie", back_populates="votes")
 
 
 class Movie(Base):
