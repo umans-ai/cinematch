@@ -85,8 +85,216 @@ CineMatch is COMPLETELY ISOLATED from llm-gateway:
 
 Only shared: Route53 zone (umans.ai) - READ-ONLY reference.
 
+## Architecture Diagrams
+
+### C4 Context Diagram (Level 1)
+
+```mermaid
+flowchart TB
+    subgraph Users["👥 Users"]
+        P1["Partner 1<br/>(Browser/Mobile)"]
+        P2["Partner 2<br/>(Browser/Mobile)"]
+    end
+
+    subgraph CineMatch["🎬 CineMatch System"]
+        FE["Frontend<br/>(Next.js)"]
+        BE["Backend API<br/>(FastAPI)"]
+        DB[("SQLite<br/>(MVP)")]
+    end
+
+    P1 -->|"HTTPS<br/>Create/Join Room"| FE
+    P2 -->|"HTTPS<br/>Join Room"| FE
+    FE -->|"REST API<br/>/api/v1/*"| BE
+    BE -->|"SQLAlchemy<br/>ORM"| DB
+
+    style Users fill:#e1f5ff
+    style CineMatch fill:#fff4e1
+    style DB fill:#e8f5e9
+```
+
+### C4 Container Diagram (Level 2)
+
+```mermaid
+flowchart TB
+    subgraph AWS["☁️ AWS Cloud (eu-west-1)"]
+        subgraph Network["Network Layer"]
+            DNS["Route 53<br/>cinematch.umans.ai"]
+            ALB["Application Load Balancer<br/>HTTPS:443 → HTTP:80 redirect"]
+        end
+
+        subgraph ECS["ECS Fargate Cluster<br/>(per environment)"]
+            subgraph FrontendSvc["Frontend Service"]
+                FE1["Next.js Container<br/>Port 3000"]
+            end
+
+            subgraph BackendSvc["Backend Service"]
+                BE1["FastAPI Container<br/>Port 8000"]
+            end
+        end
+
+        subgraph Storage["Storage"]
+            ECR["ECR Repositories<br/>cinematch-backend<br/>cinematch-frontend"]
+            SQLite[("SQLite<br/>container-local")]
+        end
+
+        subgraph Security["Security"]
+            SG1["Security Groups"]
+            IAM["IAM Roles<br/>(task/execution)"]
+        end
+    end
+
+    User["👤 User"] -->|"1. DNS Query"| DNS
+    DNS -->|"2. ALB IP"| ALB
+    ALB -->|"3. /api/* → Backend"| BE1
+    ALB -->|"3. /* → Frontend"| FE1
+    BE1 -->|"4. Read/Write"| SQLite
+    FE1 -->|"Internal API calls"| BE1
+
+    ECR -.->|"Pull images"| FE1
+    ECR -.->|"Pull images"| BE1
+
+    style AWS fill:#fff9e6
+    style ECS fill:#e3f2fd
+    style Storage fill:#f3e5f5
+    style Security fill:#ffebee
+```
+
+### Component Diagram (Level 3)
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (Next.js App Router)"]
+        HP["page.tsx<br/>Home with Room Form"]
+        RP["room/[code]/page.tsx<br/>Room with Swipe Cards"]
+        CC["components/ui/<br/>shadcn/ui components"]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        subgraph Routers["API Routers"]
+            R1["rooms.py<br/>POST /rooms<br/>POST /rooms/{code}/join"]
+            R2["movies.py<br/>GET /movies<br/>GET /movies/unvoted"]
+            R3["votes.py<br/>POST /votes<br/>GET /votes/matches"]
+        end
+
+        subgraph Models["SQLAlchemy Models"]
+            M1["Room<br/>code: str<br/>is_active: bool"]
+            M2["Participant<br/>name: str<br/>session_id: str"]
+            M3["Movie<br/>title, year, genre"]
+            M4["Vote<br/>liked: bool"]
+        end
+
+        DB[("SQLite<br/>Database")]
+    end
+
+    HP -->|"Create Room<br/>POST /api/v1/rooms"| R1
+    HP -->|"Join Room<br/>POST /api/v1/rooms/{code}/join"| R1
+    RP -->|"Get Movies<br/>GET /api/v1/movies?code={code}"| R2
+    RP -->|"Submit Vote<br/>POST /api/v1/votes"| R3
+    RP -->|"Check Matches<br/>GET /api/v1/votes/matches"| R3
+
+    R1 --> M1
+    R1 --> M2
+    R2 --> M3
+    R3 --> M4
+    M1 --> DB
+    M2 --> DB
+    M3 --> DB
+    M4 --> DB
+
+    style Frontend fill:#e3f2fd
+    style Backend fill:#e8f5e9
+    style Routers fill:#fff3e0
+    style Models fill:#fce4ec
+```
+
+### Execution Flow - User Creates Room and Swipes
+
+```mermaid
+sequenceDiagram
+    actor P1 as Partner 1
+    actor P2 as Partner 2
+    participant FE as Frontend
+    participant ALB as ALB
+    participant BE as Backend
+    participant DB as SQLite
+
+    Note over P1,P2: Room Creation
+    P1->>FE: Enter name, click "Create Room"
+    FE->>ALB: POST /api/v1/rooms
+    ALB->>BE: Route to backend
+    BE->>DB: INSERT INTO rooms (code, is_active)
+    DB-->>BE: Room created (code: 1234)
+    BE-->>ALB: {code: "1234", ...}
+    ALB-->>FE: Room data
+    FE-->>P1: Redirect to /room/1234
+
+    Note over P1,P2: Partner Joins
+    P2->>FE: Enter name & code "1234"
+    FE->>ALB: POST /api/v1/rooms/1234/join
+    ALB->>BE: Route to backend
+    BE->>DB: INSERT INTO participants
+    DB-->>BE: Participant created
+    BE-->>ALB: {name: "Bob", ...}
+    ALB-->>FE: Participant data
+    FE-->>P2: Redirect to /room/1234
+
+    Note over P1,P2: Swiping
+    P1->>FE: Swipe right on "The Matrix"
+    FE->>ALB: POST /api/v1/votes<br/>{movie_id: 8, liked: true}
+    ALB->>BE: Route to backend
+    BE->>DB: INSERT INTO votes
+    DB-->>BE: Vote recorded
+    BE-->>ALB: Vote response
+    ALB-->>FE: Success
+
+    P2->>FE: Swipe right on "The Matrix"
+    FE->>ALB: POST /api/v1/votes<br/>{movie_id: 8, liked: true}
+    ALB->>BE: Route to backend
+    BE->>DB: INSERT INTO votes
+    DB-->>BE: Vote recorded
+    BE->>DB: SELECT matches (both liked)
+    DB-->>BE: Match found!
+    BE-->>ALB: Vote response
+    ALB-->>FE: Success
+    FE-->>P2: Show "It's a Match!" overlay
+```
+
+### Deployment Flow
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub
+    participant GA as GitHub Actions
+    participant AWS as AWS
+    participant TF as Terraform
+
+    Dev->>GH: Push to main
+    GH->>GA: Trigger CI/CD
+
+    Note over GA: Check Job
+    GA->>GA: Run ruff, mypy, pytest
+    GA->>GA: Build frontend
+
+    Note over GA: Deploy Job
+    GA->>AWS: Configure OIDC credentials
+    GA->>AWS: Login to ECR
+    GA->>GA: Build Docker images
+    GA->>AWS: Push to ECR (SHA tag)
+
+    GA->>TF: terraform init
+    GA->>TF: terraform workspace select production
+    GA->>TF: terraform apply -var="image_tag=SHA"
+
+    TF->>AWS: Update ECS service
+    AWS->>AWS: Rolling deployment
+    AWS-->>GA: Deployment complete
+    GA-->>GH: Success
+```
+
 ## Data Flow
 
+Simplified view:
 ```
 User → Route53 (cinematch.umans.ai) → ALB → ECS Service → Container
 ```
@@ -127,10 +335,13 @@ User → Route53 (cinematch.umans.ai) → ALB → ECS Service → Container
 ## Increment Planning
 
 See `docs/backlog/` for planned increments:
-1. MVP with static movies (IN PROGRESS)
-2. PostgreSQL migration
-3. TMDB API integration
-4. User accounts
+
+| # | Increment | Status | Location |
+|---|-----------|--------|----------|
+| 1 | MVP with static movies | ✅ DONE | `docs/backlog/done/00001-mvp-static-movies.md` |
+| 2 | PostgreSQL migration | 📋 TODO | `docs/backlog/todo/00002-postgresql-migration.md` |
+| 3 | TMDB API integration | 📋 TODO | `docs/backlog/todo/00003-tmdb-integration.md` |
+| 4 | User accounts | 📋 TODO | `docs/backlog/todo/00004-user-accounts.md` |
 
 ## Key Decisions
 
