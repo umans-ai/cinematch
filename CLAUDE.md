@@ -198,6 +198,7 @@ This repository includes shared skills in `.claude/skills/`:
 | `/pr-merge` | Merge PRs with rebase workflow |
 | `/just` | Context-aware just target suggestions |
 | `/tdd-check` | TDD cycle helper - test list, red-green-refactor |
+| `/accept-contributor` | Accept contributor, close issue, post welcome |
 
 ## Key Paths
 
