@@ -1,17 +1,17 @@
-# ADR-005: Infrastructure Isolation from llm-gateway
+# ADR-005: Infrastructure Isolation
 
 ## Status
 Accepted
 
 ## Context
-CineMatch shares the same AWS account as llm-gateway. We need to ensure complete isolation to prevent any impact on llm-gateway production.
+CineMatch shares the same AWS account with other Umans AI internal projects. We need to ensure complete isolation to prevent any impact on existing production infrastructure.
 
 ## Decision
 Implement STRICT ISOLATION at every layer:
 
 ### Network Isolation
 - Dedicated VPC for CineMatch (10.1.0.0/16)
-- Different from llm-gateway (10.0.0.0/16)
+- Distinct range from other Umans AI infrastructure to prevent overlap
 - Own subnets, route tables, internet gateway
 
 ### Resource Isolation
@@ -26,7 +26,7 @@ Only the Route53 zone "umans.ai" is shared (org-level resource)
 Everything else is created specifically for CineMatch
 
 ## Red Lines (MUST NOT)
-- MUST NOT reference llm-gateway resources (except Route53 zone data)
+- MUST NOT reference resources from other Umans AI projects (except shared org-level resources like Route53 zone)
 - MUST NOT share ECS clusters
 - MUST NOT share ALBs
 - MUST NOT share security groups
@@ -35,13 +35,13 @@ Everything else is created specifically for CineMatch
 
 ## Consequences
 - Higher resource count (but minimal cost for small ECS)
-- Complete isolation = destroy cinematch without impacting llm-gateway
+- Complete isolation = destroy cinematch without impacting other projects
 - Slightly more complex (but safer)
 
 ## Verification
 Before any destroy operation:
 1. Check terraform plan shows only cinematch resources
-2. Verify no references to llm-gateway outputs
+2. Verify no references to outputs from other Umans AI projects
 3. Confirm separate VPC CIDR blocks
 
 ## Date

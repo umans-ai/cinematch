@@ -20,7 +20,7 @@ Creation of a new project "CineMatch" - a Tinder-style movie picker for couples 
 - **Frontend:** Next.js 14 + shadcn/ui + Tailwind
 - **Backend:** FastAPI + SQLite (MVP) → PostgreSQL (increment 2)
 - **Infrastructure:** AWS ECS Fargate with Terraform
-- **Isolation:** COMPLETE ISOLATION from llm-gateway (different VPC, dedicated ECS clusters)
+- **Isolation:** COMPLETE ISOLATION from other Umans AI projects (different VPC, dedicated ECS clusters)
 
 ## Critical Decisions Made
 
@@ -33,7 +33,7 @@ Creation of a new project "CineMatch" - a Tinder-style movie picker for couples 
    - Terraform workspaces for environments (production, pr-123)
    - Dedicated ECS cluster per environment (no shared cluster)
    - Dedicated ALB per environment
-   - VPC 10.1.0.0/16 (llm-gateway uses 10.0.0.0/16)
+   - VPC 10.1.0.0/16 (distinct from other internal ranges)
 
 3. **Preview Environments**
    - PR → preview deployment at `demo-pr-{N}.cinematch.umans.ai`
@@ -41,7 +41,7 @@ Creation of a new project "CineMatch" - a Tinder-style movie picker for couples 
 
 ### Repository Setup
 - Public repo: `github.com/umans-ai/cinematch`
-- Same workflow as llm-gateway (CLAUDE.md, ADRs, backlog, justfile)
+- Same workflow as other Umans AI projects (CLAUDE.md, ADRs, backlog, justfile)
 - GitHub Actions with OIDC for AWS auth
 
 ## Implementation Log
@@ -94,9 +94,9 @@ operations/
 
 ## Security & Isolation
 
-### Isolation from llm-gateway
-- ✅ Different VPC CIDR (10.1.0.0/16 vs 10.0.0.0/16)
-- ✅ Different ECS cluster names (cinematch-* vs llm-gateway)
+### Isolation from Other Umans AI Projects
+- ✅ Different VPC CIDR from other internal infrastructure
+- ✅ Different ECS cluster names (cinematch-* vs other naming conventions)
 - ✅ Different ALB names
 - ✅ Different security group names
 - ✅ Different IAM role names

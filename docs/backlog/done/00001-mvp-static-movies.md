@@ -72,7 +72,7 @@ See initial conversation: we want to stop spending evenings choosing movies and 
 - **CI/CD:** GitHub Actions + Terraform Workspaces
 
 ### Architecture Decisions Implemented
-- Dedicated VPC (10.1.0.0/16) - complete isolation from llm-gateway
+- Dedicated VPC (10.1.0.0/16) - complete isolation from other Umans AI projects
 - Dedicated ECS cluster per environment (production, pr-N)
 - Terraform workspaces for environment isolation
 - Foundation/Service layer split (foundation applied manually, service by CI/CD)

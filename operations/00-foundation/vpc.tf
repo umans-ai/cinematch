@@ -1,8 +1,8 @@
 # VPC and Networking
-# Dedicated VPC for CineMatch (COMPLETE ISOLATION from llm-gateway)
+# Dedicated VPC for CineMatch (COMPLETE ISOLATION from other Umans AI projects)
 
 resource "aws_vpc" "cinematch" {
-  cidr_block           = "10.1.0.0/16"  # Different from llm-gateway (10.0.0.0/16)
+  cidr_block           = "10.1.0.0/16"  # Distinct range from other internal infrastructure
   enable_dns_hostnames = true
   enable_dns_support   = true
 

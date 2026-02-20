@@ -8,7 +8,7 @@
 CineMatch is **SAFE** for public repository status with proper isolation from other Umans products.
 
 - ✅ No hardcoded secrets in code
-- ✅ Complete network isolation from llm-gateway and umans-platform
+- ✅ Complete network isolation from other Umans AI projects
 - ✅ Separate AWS resources with distinct naming
 - ✅ OIDC-based AWS authentication (no long-lived credentials)
 - ✅ Contributors cannot impact other products
@@ -17,10 +17,10 @@ CineMatch is **SAFE** for public repository status with proper isolation from ot
 
 ### Network Isolation
 
-| Resource | CineMatch | llm-gateway | Status |
-|----------|-----------|-------------|--------|
-| VPC CIDR | 10.1.0.0/16 | 10.0.0.0/16 | ✅ Different networks |
-| Subnet ranges | 10.1.1.0/24, 10.1.2.0/24 | 10.0.x.x | ✅ No overlap |
+| Resource | CineMatch | Other Umans Projects | Status |
+|----------|-----------|---------------------|--------|
+| VPC CIDR | 10.1.0.0/16 | Other internal ranges | ✅ Different networks |
+| Subnet ranges | 10.1.1.0/24, 10.1.2.0/24 | Other internal ranges | ✅ No overlap |
 | VPC Peering | None | None | ✅ Isolated |
 
 ### AWS Resource Isolation
@@ -35,7 +35,7 @@ All CineMatch resources use `cinematch-*` prefix:
 - ✅ **CloudWatch Logs:** `/ecs/cinematch-*`
 - ✅ **Route53 Records:** `*.cinematch.umans.ai`
 
-llm-gateway uses different prefixes (`llm-gateway-*`, `llmproxy-*`).
+Other Umans AI projects use different naming prefixes to ensure isolation.
 
 ### What Contributors CAN Do
 
@@ -51,8 +51,8 @@ With the current GitHub Actions setup, contributors (via PR) can:
 Contributors **CANNOT**:
 
 1. **Access production directly** - Only maintainers can push to main
-2. **Access llm-gateway resources** - Different IAM role required
-3. **Access umans-platform** - Separate AWS account or role
+2. **Access other Umans AI projects** - Different IAM roles required
+3. **Access internal Umans AI infrastructure** - Separate AWS account or role
 4. **View secrets** - AWS Secrets Manager permissions limited
 5. **Modify foundation layer** - Applied manually, not via CI/CD
 6. **Delete production resources** - Separate workspace, protected branch
@@ -123,7 +123,7 @@ If future increments need secrets:
 | Risk | Level | Mitigation |
 |------|-------|------------|
 | Contributor modifies production | Low | Protected branch `main`, requires maintainer review |
-| Contributor accesses llm-gateway | None | Different IAM role, no permissions |
+| Contributor accesses other projects | None | Different IAM role, no permissions |
 | Contributor views secrets | Low | Secrets in AWS SM, no read access in CI role |
 | Terraform destroys resources | Low | `prevent_destroy` can be added to critical resources |
 | Preview environment costs | Low | Auto-destroy on PR close |
@@ -163,7 +163,7 @@ If future increments need secrets:
 
 ## Conclusion
 
-CineMatch is **SAFE** as a public repository with **COMPLETE ISOLATION** from llm-gateway and umans-platform.
+CineMatch is **SAFE** as a public repository with **COMPLETE ISOLATION** from other Umans AI internal infrastructure.
 
 Contributors can:
 - Develop features safely in isolated preview environments
