@@ -1,0 +1,30 @@
+name: Discussion
+about: Question sur l'architecture, proposition d'amélioration
+title: "discussion: "
+labels: ["discussion"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte
+      description: Décris le sujet de discussion
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question / Proposition
+      description: Qu'est-ce que tu veux discuter ?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: J'ai fait mes recherches
+      options:
+        - label: J'ai lu les ADRs concernés
+          required: false
+        - label: J'ai cherché dans les issues existantes
+          required: false

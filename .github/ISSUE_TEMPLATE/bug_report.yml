@@ -1,0 +1,43 @@
+name: Bug Report
+about: Signaler un bug
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Décris le bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Étapes pour reproduire
+      placeholder: |
+        1. Aller sur ...
+        2. Cliquer sur ...
+        3. Erreur
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environnement
+      options:
+        - Local (Docker)
+        - Local (natif)
+        - Preview (PR)
+        - Production
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Copie les erreurs ou ajoute des screenshots
+      render: shell

@@ -73,7 +73,14 @@ Open http://localhost:3000
 
 ## Contributing
 
-This is a public repository. See [docs/SECURITY.md](docs/SECURITY.md) for isolation and security details.
+> **Projet éducatif open source** — Apprends le développement moderne avec l'aide de l'IA
+
+Tu veux contribuer ? Génial ! Commence par lire **[CONTRIBUTING.md](CONTRIBUTING.md)** pour :
+- Obtenir l'accès write (nécessaire pour les previews AWS)
+- Comprendre le workflow de contribution
+- Découvrir les ressources pédagogiques
+
+Voir aussi [docs/SECURITY.md](docs/SECURITY.md) pour les garanties d'isolation et de sécurité.
 
 ### Skills Available
 

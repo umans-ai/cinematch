@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Voir CONTRIBUTING.md
+    url: https://github.com/umans-ai/cinematch/blob/main/CONTRIBUTING.md
+    about: Guide de contribution complet
+  - name: Voir CLAUDE.md
+    url: https://github.com/umans-ai/cinematch/blob/main/CLAUDE.md
+    about: Conventions techniques et workflow
