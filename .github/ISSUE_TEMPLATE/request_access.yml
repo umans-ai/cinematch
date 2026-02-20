@@ -1,5 +1,5 @@
 name: Request Access
-about: Demander l'accès write pour contribuer avec previews automatiques
+description: Demander l'accès write pour contribuer avec previews automatiques
 title: "Request access: @"
 labels: ["access request"]
 body:
