@@ -24,7 +24,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "sqlite:////tmp/cinematch.db"
+          value = local.database_url
         },
         {
           name  = "CORS_ORIGINS"

@@ -62,3 +62,27 @@ resource "aws_security_group" "ecs" {
     Name = "cinematch-ecs-${terraform.workspace}"
   }
 }
+
+resource "aws_security_group" "rds" {
+  name        = "cinematch-rds-${terraform.workspace}"
+  description = "RDS PostgreSQL for CineMatch ${terraform.workspace}"
+  vpc_id      = data.terraform_remote_state.foundation.outputs.vpc_id
+
+  ingress {
+    protocol        = "tcp"
+    from_port       = 5432
+    to_port         = 5432
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "cinematch-rds-${terraform.workspace}"
+  }
+}

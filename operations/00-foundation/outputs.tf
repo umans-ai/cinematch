@@ -27,3 +27,13 @@ output "route53_zone_id" {
   description = "Route53 zone ID (umans.ai)"
   value       = data.aws_route53_zone.umans.zone_id
 }
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs (for RDS)"
+  value       = aws_subnet.private[*].id
+}
+
+output "db_subnet_group_name" {
+  description = "DB subnet group name"
+  value       = aws_db_subnet_group.cinematch.name
+}
