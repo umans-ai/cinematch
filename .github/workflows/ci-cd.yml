@@ -117,7 +117,13 @@ jobs:
         with:
           terraform_version: "1.7.0"
 
-      - name: Deploy to environment
+      - name: Deploy foundation layer
+        run: |
+          cd operations/00-foundation
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Deploy service layer
         id: deploy
         run: |
           cd operations/01-service
