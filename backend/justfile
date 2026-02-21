@@ -1,17 +1,17 @@
 dev:
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
-    pytest tests/ -v
+    uv run pytest tests/ -v
 
 lint:
-    ruff check app/
+    uv run ruff check app/
 
 fmt:
-    ruff format app/
+    uv run ruff format app/
 
 typecheck:
-    mypy app/
+    uv run mypy app/
 
 check: lint fmt typecheck test
 
@@ -20,3 +20,16 @@ docker-build:
 
 docker-run:
     docker run -p 8000:8000 cinematch-backend
+
+# Database migrations
+migrate:
+    uv run alembic upgrade head
+
+migrate-down:
+    uv run alembic downgrade -1
+
+migration-create NAME:
+    uv run alembic revision --autogenerate -m "{{NAME}}"
+
+migration-history:
+    uv run alembic history --verbose

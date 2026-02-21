@@ -1,0 +1,30 @@
+[project]
+name = "cinematch-backend"
+version = "0.1.0"
+description = "CineMatch backend API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.32.0",
+    "sqlalchemy==2.0.36",
+    "pydantic==2.9.2",
+    "python-multipart==0.0.17",
+    "alembic==1.14.0",
+    "psycopg2-binary==2.9.10",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.7.0",
+    "mypy==1.13.0",
+    "pytest==8.3.0",
+    "httpx==0.27.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+only-include = ["app", "migrations", "alembic.ini"]

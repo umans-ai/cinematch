@@ -1,21 +1,41 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=cinematch
+      - POSTGRES_PASSWORD=cinematch_dev
+      - POSTGRES_DB=cinematch
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cinematch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./cinematch.db
+      - DATABASE_URL=postgresql://cinematch:cinematch_dev@postgres:5432/cinematch
       - CORS_ORIGINS=http://localhost:3000
-    volumes:
-      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+      - ./frontend/.env.local
     depends_on:
       - backend
+
+volumes:
+  postgres_data:
