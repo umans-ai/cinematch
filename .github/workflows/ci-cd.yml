@@ -19,27 +19,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.0"
+
       - name: Install Python dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install ruff mypy pytest httpx==0.27.2
+          uv sync --all-groups
 
       - name: Backend lint
-        run: cd backend && ruff check app/
+        run: cd backend && uv run ruff check app/
 
       - name: Backend typecheck
-        run: cd backend && mypy app/
+        run: cd backend && uv run mypy app/
 
       - name: Backend test
-        run: cd backend && pytest tests/ -v
+        run: cd backend && uv run pytest tests/ -v
 
       - name: Install Node dependencies
         run: cd frontend && npm ci
