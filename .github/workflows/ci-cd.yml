@@ -31,22 +31,17 @@ jobs:
         with:
           version: "latest"
 
-      - name: Backend check (lint + typecheck + test)
-        run: |
-          cd backend
-          uv sync --group dev
-          uv run ruff check app/
-          uv run ty check app/
-          uv run pytest tests/ -v
+      - name: Install just
+        uses: extractions/setup-just@v2
 
-      - name: Install Node dependencies
+      - name: Backend dependencies
+        run: cd backend && uv sync --group dev
+
+      - name: Frontend dependencies
         run: cd frontend && npm ci
 
-      - name: Frontend lint
-        run: cd frontend && npm run lint
-
-      - name: Frontend typecheck
-        run: cd frontend && npm run typecheck
+      - name: Run checks
+        run: just check
 
   deploy:
     needs: check
