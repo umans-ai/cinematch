@@ -46,7 +46,7 @@ resource "random_password" "db_password" {
 resource "aws_db_instance" "cinematch" {
   identifier     = "cinematch-${terraform.workspace}"
   engine         = "postgres"
-  engine_version = "16.3"
+  engine_version = "16"
   instance_class = "db.t4g.micro"
 
   allocated_storage     = 20
