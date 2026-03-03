@@ -43,7 +43,7 @@ def create_vote(code: str, vote: VoteCreate, request: Request, db: Session = Dep
 
     if existing:
         # Update existing vote
-        existing.liked = vote.liked  # type: ignore
+        existing.liked = vote.liked
         db.commit()
         db.refresh(existing)
         return existing
