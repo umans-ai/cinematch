@@ -1,14 +1,15 @@
 import random
 import string
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
-from sqlalchemy.sql import func
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from .database import Base
 
 
 def generate_room_code():
-    return ''.join(random.choices(string.digits, k=4))
+    return "".join(random.choices(string.digits, k=4))
 
 
 class Room(Base):

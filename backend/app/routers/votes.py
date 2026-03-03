@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
 from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+
 from ..database import get_db
-from ..models import Room, Participant, Vote, Movie
-from ..schemas import VoteCreate, VoteResponse, MatchResponse
+from ..models import Movie, Participant, Room, Vote
+from ..schemas import MatchResponse, VoteCreate, VoteResponse
 
 router = APIRouter()
 
@@ -14,31 +15,31 @@ def get_session_id(request: Request) -> str:
 
 
 @router.post("", response_model=VoteResponse)
-def create_vote(
-    code: str,
-    vote: VoteCreate,
-    request: Request,
-    db: Session = Depends(get_db)
-):
+def create_vote(code: str, vote: VoteCreate, request: Request, db: Session = Depends(get_db)):
     room = db.query(Room).filter(Room.code == code).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
     session_id = get_session_id(request)
-    participant = db.query(Participant).filter(
-        Participant.room_id == room.id,
-        Participant.session_id == session_id
-    ).first()
+    participant = (
+        db.query(Participant)
+        .filter(Participant.room_id == room.id, Participant.session_id == session_id)
+        .first()
+    )
 
     if not participant:
         raise HTTPException(status_code=403, detail="Not a participant in this room")
 
     # Check if already voted on this movie
-    existing = db.query(Vote).filter(
-        Vote.room_id == room.id,
-        Vote.participant_id == participant.id,
-        Vote.movie_id == vote.movie_id
-    ).first()
+    existing = (
+        db.query(Vote)
+        .filter(
+            Vote.room_id == room.id,
+            Vote.participant_id == participant.id,
+            Vote.movie_id == vote.movie_id,
+        )
+        .first()
+    )
 
     if existing:
         # Update existing vote
@@ -48,10 +49,7 @@ def create_vote(
         return existing
 
     new_vote = Vote(
-        room_id=room.id,
-        participant_id=participant.id,
-        movie_id=vote.movie_id,
-        liked=vote.liked
+        room_id=room.id, participant_id=participant.id, movie_id=vote.movie_id, liked=vote.liked
     )
     db.add(new_vote)
     db.commit()
@@ -77,19 +75,21 @@ def get_matches(code: str, db: Session = Depends(get_db)):
     movies = db.query(Movie).all()
 
     for movie in movies:
-        votes = db.query(Vote).filter(
-            Vote.room_id == room.id,
-            Vote.movie_id == movie.id,
-            Vote.liked.is_(True)
-        ).all()
+        votes = (
+            db.query(Vote)
+            .filter(Vote.room_id == room.id, Vote.movie_id == movie.id, Vote.liked.is_(True))
+            .all()
+        )
 
         voter_ids = [v.participant_id for v in votes]
 
         # Check if all participants liked this movie
         if set(participant_ids).issubset(set(voter_ids)):
-            matches.append(MatchResponse(
-                movie=movie,
-                participants=[p.name for p in participants]  # type: ignore
-            ))
+            matches.append(
+                MatchResponse(
+                    movie=movie,
+                    participants=[p.name for p in participants],  # type: ignore
+                )
+            )
 
     return matches

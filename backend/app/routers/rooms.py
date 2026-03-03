@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 import uuid
 
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from ..database import get_db
-from ..models import Room, Participant
-from ..schemas import RoomResponse, ParticipantCreate, ParticipantResponse
+from ..models import Participant, Room
+from ..schemas import ParticipantCreate, ParticipantResponse, RoomResponse
 
 router = APIRouter()
 
@@ -43,10 +44,7 @@ def get_room(code: str, db: Session = Depends(get_db)):
 
 @router.post("/{code}/join", response_model=ParticipantResponse)
 def join_room(
-    code: str,
-    participant: ParticipantCreate,
-    request: Request,
-    db: Session = Depends(get_db)
+    code: str, participant: ParticipantCreate, request: Request, db: Session = Depends(get_db)
 ):
     room = db.query(Room).filter(Room.code == code).first()
     if not room:
@@ -55,27 +53,22 @@ def join_room(
     session_id = get_session_id(request)
 
     # Check if already joined
-    existing = db.query(Participant).filter(
-        Participant.room_id == room.id,
-        Participant.session_id == session_id
-    ).first()
+    existing = (
+        db.query(Participant)
+        .filter(Participant.room_id == room.id, Participant.session_id == session_id)
+        .first()
+    )
 
     if existing:
         return existing
 
     # Check room capacity (max 2 for now)
-    participant_count = db.query(Participant).filter(
-        Participant.room_id == room.id
-    ).count()
+    participant_count = db.query(Participant).filter(Participant.room_id == room.id).count()
 
     if participant_count >= 2:
         raise HTTPException(status_code=400, detail="Room is full")
 
-    new_participant = Participant(
-        room_id=room.id,
-        name=participant.name,
-        session_id=session_id
-    )
+    new_participant = Participant(room_id=room.id, name=participant.name, session_id=session_id)
     db.add(new_participant)
     db.commit()
     db.refresh(new_participant)
