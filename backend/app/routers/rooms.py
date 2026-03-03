@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -44,7 +44,11 @@ def get_room(code: str, db: Session = Depends(get_db)):
 
 @router.post("/{code}/join", response_model=ParticipantResponse)
 def join_room(
-    code: str, participant: ParticipantCreate, request: Request, db: Session = Depends(get_db)
+    code: str,
+    participant: ParticipantCreate,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
 ):
     room = db.query(Room).filter(Room.code == code).first()
     if not room:
@@ -60,6 +64,7 @@ def join_room(
     )
 
     if existing:
+        response.set_cookie(key="session_id", value=session_id, httponly=True)
         return existing
 
     # Check room capacity (max 2 for now)
@@ -72,4 +77,5 @@ def join_room(
     db.add(new_participant)
     db.commit()
     db.refresh(new_participant)
+    response.set_cookie(key="session_id", value=session_id, httponly=True)
     return new_participant
