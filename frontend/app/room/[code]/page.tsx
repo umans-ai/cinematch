@@ -2,12 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import { Heart, X, Check } from "lucide-react";
+import { Check, Copy, Heart, X } from "lucide-react";
 
 interface Movie {
   id: number;
@@ -15,6 +10,7 @@ interface Movie {
   year?: number;
   genre?: string;
   description?: string;
+  poster_url?: string;
 }
 
 interface Match {
@@ -32,6 +28,7 @@ export default function RoomPage() {
   const [showMatch, setShowMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -69,10 +66,8 @@ export default function RoomPage() {
         body: JSON.stringify({ movie_id: movie.id, liked }),
       });
 
-      // Check for new matches
       await fetchMatches();
 
-      // Move to next movie
       if (currentIndex < movies.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
@@ -83,122 +78,205 @@ export default function RoomPage() {
     }
   };
 
+  const copyRoomCode = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading movies...</div>
-      </div>
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <p className="text-sm text-muted-foreground">Loading movies...</p>
+      </main>
     );
   }
 
   if (finished) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 p-4">
-        <div className="max-w-md mx-auto pt-20">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">All done!</h2>
-            <p className="text-gray-600">
+      <main className="min-h-screen p-6">
+        <div className="max-w-sm mx-auto pt-12 space-y-8">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+              <Check className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {matches.length > 0 ? "You found a match!" : "No matches yet"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
               {matches.length > 0
-                ? `You found ${matches.length} match${matches.length > 1 ? "es" : ""}!`
-                : "No matches yet. Maybe try again with different movies?"}
+                ? `You and your friends agreed on ${matches.length} movie${matches.length > 1 ? "s" : ""}`
+                : "Try swiping through more movies next time"}
             </p>
-            {matches.length > 0 && (
-              <div className="space-y-2 mt-6">
-                <h3 className="font-semibold">Your matches:</h3>
-                {matches.map((match, idx) => (
-                  <Card key={idx} className="bg-white">
-                    <CardContent className="p-4">
-                      <div className="font-semibold">{match.movie.title}</div>
-                      <div className="text-sm text-gray-500">
-                        {match.movie.year} • {match.movie.genre}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-            <Button onClick={() => window.location.href = "/"} className="mt-6">
-              Start over
-            </Button>
           </div>
+
+          {matches.length > 0 && (
+            <div className="space-y-3">
+              {matches.map((match, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-xl border border-input bg-card"
+                >
+                  <h3 className="font-medium">{match.movie.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {match.movie.year} • {match.movie.genre}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="w-full h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Start over
+          </button>
         </div>
       </main>
     );
   }
 
   const currentMovie = movies[currentIndex];
+  const progress = ((currentIndex + 1) / movies.length) * 100;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 p-4">
-      <div className="max-w-md mx-auto pt-4">
-        <div className="text-center mb-4">
-          <p className="text-sm text-gray-500">Room: {code}</p>
-          <p className="text-sm text-gray-500">
-            {currentIndex + 1} / {movies.length}
-          </p>
+    <main className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="px-6 py-4 flex items-center justify-between border-b">
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="text-sm font-medium hover:opacity-70 transition-opacity"
+        >
+          CineMatch
+        </button>
+
+        <button
+          onClick={copyRoomCode}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-input text-sm hover:bg-secondary transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check className="w-4 h-4" />
+              <span>Copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-4 h-4" />
+              <span className="font-mono tracking-wider">{code}</span>
+            </>
+          )}
+        </button>
+      </header>
+
+      {/* Progress */}
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-muted-foreground">
+            {currentIndex + 1} of {movies.length}
+          </span>
+          <span className="text-muted-foreground">
+            {matches.length} match{matches.length !== 1 ? "es" : ""}
+          </span>
         </div>
+        <div className="h-1 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-foreground rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
 
-        {showMatch && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-sm w-full bg-white animate-in zoom-in">
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="text-6xl">🎉</div>
-                <h3 className="text-2xl font-bold">It&apos;s a Match!</h3>
-                <div>
-                  <p className="font-semibold text-lg">{showMatch.movie.title}</p>
-                  <p className="text-gray-500">
-                    {showMatch.movie.year} • {showMatch.movie.genre}
-                  </p>
+      {/* Movie Card */}
+      <div className="flex-1 px-6 pb-6">
+        <div className="max-w-sm mx-auto h-full flex flex-col">
+          {/* Card */}
+          <div className="flex-1 rounded-2xl border border-input overflow-hidden bg-card flex flex-col">
+            {/* Poster Area */}
+            <div className="aspect-[4/5] bg-muted relative">
+              {currentMovie.poster_url ? (
+                <img
+                  src={currentMovie.poster_url}
+                  alt={currentMovie.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-4xl opacity-20">🎬</span>
                 </div>
-                <Button onClick={() => setShowMatch(null)} className="w-full">
-                  Continue swiping
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              )}
+            </div>
 
-        <Card className="overflow-hidden shadow-xl">
-          <div className="aspect-[2/3] bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center p-8">
-            <div className="text-center text-white">
-              <h2 className="text-3xl font-bold mb-2">{currentMovie.title}</h2>
-              <p className="text-gray-300">
-                {currentMovie.year} • {currentMovie.genre}
+            {/* Info */}
+            <div className="p-5 space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">
+                  {currentMovie.title}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {currentMovie.year} • {currentMovie.genre}
+                </p>
+              </div>
+
+              {currentMovie.description && (
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {currentMovie.description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => handleVote(false)}
+              className="flex-1 h-12 rounded-xl border border-input flex items-center justify-center gap-2 hover:bg-secondary transition-colors"
+            >
+              <X className="w-5 h-5" />
+              <span className="text-sm font-medium">Pass</span>
+            </button>
+
+            <button
+              onClick={() => handleVote(true)}
+              className="flex-1 h-12 rounded-xl bg-foreground text-background flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              <Heart className="w-5 h-5" />
+              <span className="text-sm font-medium">Like</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Match Modal */}
+      {showMatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50">
+          <div className="w-full max-w-sm rounded-2xl bg-background p-6 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <Heart className="w-6 h-6 fill-foreground" />
+              </div>
+              <h2 className="text-xl font-semibold">It's a match!</h2>
+              <p className="text-sm text-muted-foreground">
+                You and your friends liked
               </p>
             </div>
-          </div>
-          <CardContent className="p-6">
-            <p className="text-gray-600 mb-6 line-clamp-3">
-              {currentMovie.description}
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => handleVote(false)}
-                className="rounded-full w-16 h-16 p-0 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50"
-              >
-                <X className="w-8 h-8 text-gray-600" />
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => handleVote(true)}
-                className="rounded-full w-16 h-16 p-0 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
-              >
-                <Heart className="w-8 h-8" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {matches.length > 0 && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {matches.length} match{matches.length > 1 ? "es" : ""} found so far
-            </p>
+            <div className="p-4 rounded-xl border border-input bg-card">
+              <h3 className="font-medium">{showMatch.movie.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {showMatch.movie.year} • {showMatch.movie.genre}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowMatch(null)}
+              className="w-full h-11 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Continue
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </main>
   );
 }

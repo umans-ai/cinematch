@@ -2,23 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Film, Plus, Users } from "lucide-react";
+import { Film } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
-  const [roomCode, setRoomCode] = useState("");
   const [name, setName] = useState("");
+  const [roomCode, setRoomCode] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
 
   const createRoom = async () => {
     if (!name.trim()) return;
@@ -30,7 +22,6 @@ export default function Home() {
       });
       const data = await response.json();
 
-      // Join the room immediately
       await fetch(`/api/v1/rooms/${data.code}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,79 +53,94 @@ export default function Home() {
       router.push(`/room/${roomCode.trim()}`);
     } catch (error) {
       console.error("Failed to join room:", error);
-      alert("Invalid room code or room is full");
+      alert("Invalid room code");
       setIsJoining(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-6">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <Film className="w-10 h-10 text-rose-500" />
-            <h1 className="text-4xl font-bold text-gray-900">CineMatch</h1>
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-sm space-y-8">
+        {/* Logo */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-foreground">
+            <Film className="w-6 h-6 text-background" />
           </div>
-          <p className="text-gray-600">
-            Swipe through movies with your partner and find the perfect match
+          <h1 className="text-2xl font-semibold tracking-tight">
+            CineMatch
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Find a movie to watch together
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Join the fun
-            </CardTitle>
-            <CardDescription>
-              Enter your name to create a room or join an existing one
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Your name"
+        {/* Form */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="name">
+              Your name
+            </label>
+            <input
+              id="name"
+              type="text"
+              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
             />
+          </div>
 
-            <Button
-              onClick={createRoom}
-              disabled={!name.trim() || isCreating}
-              className="w-full"
-              size="lg"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {isCreating ? "Creating..." : "Create Room"}
-            </Button>
+          {!showJoin ? (
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={createRoom}
+                disabled={!name.trim() || isCreating}
+                className="w-full h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              >
+                {isCreating ? "Creating..." : "Create room"}
+              </button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or join existing
-                </span>
-              </div>
+              <button
+                onClick={() => setShowJoin(true)}
+                className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm font-medium hover:bg-secondary transition-colors"
+              >
+                Join room
+              </button>
             </div>
+          ) : (
+            <div className="space-y-3 pt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="code">
+                  Room code
+                </label>
+                <input
+                  id="code"
+                  type="text"
+                  placeholder="Enter 4-digit code"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  maxLength={4}
+                  className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm text-center tracking-[0.2em] font-medium placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
+                />
+              </div>
 
-            <div className="flex gap-2">
-              <Input
-                placeholder="Room code (4 digits)"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value)}
-                maxLength={4}
-                className="uppercase"
-              />
-              <Button
+              <button
                 onClick={joinRoom}
                 disabled={!name.trim() || !roomCode.trim() || isJoining}
+                className="w-full h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
-                {isJoining ? "..." : "Join"}
-              </Button>
+                {isJoining ? "Joining..." : "Join room"}
+              </button>
+
+              <button
+                onClick={() => setShowJoin(false)}
+                className="w-full h-11 px-4 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Go back
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </main>
   );
