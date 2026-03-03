@@ -70,24 +70,35 @@ tests/
 
 ## Test List (TDD)
 
-### Phase 1: Dependencies & Infrastructure
-- [ ] testcontainers starts PostgreSQL container successfully
-- [ ] Alembic initializes with proper env.py configuration
-- [ ] Database connection works with PostgreSQL engine
+### Phase 1: Dependencies & Infrastructure ✅
+- [x] testcontainers starts PostgreSQL container successfully
+- [x] Alembic initializes with proper env.py configuration
+- [x] Database connection works with PostgreSQL engine
 
-### Phase 2: Repository Pattern
-- [ ] RoomRepository.create returns room with generated code
-- [ ] RoomRepository.get_by_code returns saved room
-- [ ] RoomRepository.get_by_code returns None when not found
-- [ ] ParticipantRepository.add_to_room links participant to room
-- [ ] VoteRepository.record_vote stores vote correctly
-- [ ] VoteRepository.get_votes_for_room returns all room votes
+### Phase 2: Repository Pattern ✅
+- [x] RoomRepository.create returns room with generated code
+- [x] RoomRepository.get_by_code returns saved room
+- [x] RoomRepository.get_by_code returns None when not found
+- [x] ParticipantRepository.add_to_room links participant to room
+- [x] VoteRepository.record_vote stores vote correctly
+- [x] VoteRepository.get_votes_for_room returns all room votes
 
-### Phase 3: Migration Tests
-- [ ] Migration upgrade_001 creates tables matching models
-- [ ] Migration downgrade_001 drops all tables
-- [ ] Upgrade then downgrade is idempotent
-- [ ] Migration with seed data preserves data integrity
+### Phase 3: Migration Tests ✅
+- [x] Migration upgrade_001 creates tables matching models
+- [x] Migration downgrade_001 drops all tables
+- [x] Upgrade then downgrade is idempotent
+- [x] Migration with seed data preserves data integrity
 
-### Phase 4: Integration
-- [ ] Full flow: create room → join → vote → retrieve votes
+### Phase 4: Integration ✅
+- [x] Full flow: create room → join → vote → retrieve votes
+
+## Implementation Progress
+
+### Completed
+- [x] Dependencies: psycopg2-binary, alembic, testcontainers[postgres]
+- [x] Alembic configuration with env.py supporting test overrides
+- [x] Initial migration (cdc82f99bace) with Room, Participant, Vote, Movie tables
+- [x] Integration test structure: tests/integration/ with conftest.py
+- [x] testcontainers-based PostgreSQL fixtures with retry logic
+- [x] Persistence tests: given/when/then pattern for Room entity
+- [x] Migration tests: upgrade/downgrade/idempotency/data integrity
