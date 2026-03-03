@@ -99,6 +99,42 @@ Create an ADR when making decisions that:
 
 Commit ADRs alongside implementation, not separately.
 
+## Python Toolchain (UV)
+
+The backend uses the [Astral toolchain](https://astral.sh/): uv for packages, ruff for linting, ty for type checking.
+
+### Quick Reference
+
+```bash
+cd backend
+
+# Sync dependencies (creates venv + installs from uv.lock)
+uv sync --group dev
+
+# Run commands in project environment
+uv run pytest
+uv run uvicorn app.main:app --reload
+
+# Add dependency
+uv add <package>
+
+# Add dev dependency (to dependency-groups.dev)
+uv add --group dev <package>
+
+# Update lockfile after manual pyproject.toml edits
+uv lock
+```
+
+### Agent Guidelines
+
+1. **Always `uv sync --group dev` first** - Ensures environment matches lockfile
+2. **Use `uv run`** instead of activating venvs manually
+3. **Commit `uv.lock`** changes alongside `pyproject.toml`
+4. **Don't use pip** - Use `uv add` or edit `pyproject.toml` + `uv lock`
+5. **Type checking with ty** - Astral's Rust-based type checker, 10-100x faster than mypy
+
+See [ADR 006](docs/architecture/decisions/006-uv-toolchain.md) for rationale.
+
 ## Development Workflow
 
 ### Plan Before Code
@@ -134,8 +170,10 @@ just typecheck  # Run type checkers
 just dev        # Start dev environment (docker-compose)
 just dev-logs   # Tail dev logs
 
-# Backend-specific
-cd backend && just test
+# Backend-specific (uses uv)
+cd backend && just sync    # First time / after dependency changes
+cd backend && just dev     # Start dev server
+cd backend && just test    # Run tests
 
 # Frontend-specific
 cd frontend && just dev

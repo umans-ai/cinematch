@@ -1,19 +1,22 @@
 dev:
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
-    pytest tests/ -v
+    uv run pytest tests/ -v
 
 lint:
-    ruff check app/
+    uv run ruff check app/
 
 fmt:
-    ruff format app/
+    uv run ruff format app/
 
 typecheck:
-    mypy app/
+    uv run ty check app/
 
 check: lint fmt typecheck test
+
+sync:
+    uv sync
 
 docker-build:
     docker build -t cinematch-backend .

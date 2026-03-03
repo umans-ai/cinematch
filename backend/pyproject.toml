@@ -1,0 +1,58 @@
+[project]
+name = "cinematch-backend"
+version = "0.1.0"
+description = "CineMatch backend API - Swipe-based movie picker"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.109.0",
+    "uvicorn[standard]==0.27.0",
+    "sqlalchemy==2.0.25",
+    "pydantic==2.5.3",
+    "python-multipart==0.0.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "httpx>=0.26.0",
+    "ruff>=0.1.0",
+    "ty>=0.0.20",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+# Include the app package
+where = ["."]
+include = ["app*", "tests*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ty.environment]
+# ty is Astral's Rust-based type checker
+# Fast feedback: 10-100x faster than mypy
+python-version = "3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
