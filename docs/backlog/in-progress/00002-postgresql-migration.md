@@ -66,4 +66,28 @@ tests/
 ### Key Dependencies
 - `testcontainers[postgres]` - ephemeral PostgreSQL in tests
 - `alembic` - migration management
-- `pytest-asyncio` - if using async SQLAlchemy
+- `psycopg2-binary` - PostgreSQL driver
+
+## Test List (TDD)
+
+### Phase 1: Dependencies & Infrastructure
+- [ ] testcontainers starts PostgreSQL container successfully
+- [ ] Alembic initializes with proper env.py configuration
+- [ ] Database connection works with PostgreSQL engine
+
+### Phase 2: Repository Pattern
+- [ ] RoomRepository.create returns room with generated code
+- [ ] RoomRepository.get_by_code returns saved room
+- [ ] RoomRepository.get_by_code returns None when not found
+- [ ] ParticipantRepository.add_to_room links participant to room
+- [ ] VoteRepository.record_vote stores vote correctly
+- [ ] VoteRepository.get_votes_for_room returns all room votes
+
+### Phase 3: Migration Tests
+- [ ] Migration upgrade_001 creates tables matching models
+- [ ] Migration downgrade_001 drops all tables
+- [ ] Upgrade then downgrade is idempotent
+- [ ] Migration with seed data preserves data integrity
+
+### Phase 4: Integration
+- [ ] Full flow: create room → join → vote → retrieve votes
