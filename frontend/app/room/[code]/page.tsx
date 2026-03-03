@@ -92,6 +92,22 @@ export default function RoomPage() {
     );
   }
 
+  if (movies.length === 0) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <p className="text-sm text-muted-foreground">No movies found in this room.</p>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Go back
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   if (finished) {
     return (
       <main className="min-h-screen p-6">
@@ -194,7 +210,7 @@ export default function RoomPage() {
           <div className="flex-1 rounded-2xl border border-input overflow-hidden bg-card flex flex-col">
             {/* Poster Area */}
             <div className="aspect-[4/5] bg-muted relative">
-              {currentMovie.poster_url ? (
+              {currentMovie?.poster_url ? (
                 <img
                   src={currentMovie.poster_url}
                   alt={currentMovie.title}
@@ -211,14 +227,14 @@ export default function RoomPage() {
             <div className="p-5 space-y-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">
-                  {currentMovie.title}
+                  {currentMovie?.title}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {currentMovie.year} • {currentMovie.genre}
+                  {currentMovie?.year} • {currentMovie?.genre}
                 </p>
               </div>
 
-              {currentMovie.description && (
+              {currentMovie?.description && (
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {currentMovie.description}
                 </p>

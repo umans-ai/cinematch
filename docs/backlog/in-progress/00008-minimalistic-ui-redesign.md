@@ -76,13 +76,37 @@ Transform the UI to feel like a premium, modern application with:
 - [x] Focus states
 - [x] Loading states
 
+## Screenshots
+
+### 1. Landing Page - Create Room
+Clean centered layout with logo, single input for name, and two clear CTAs:
+- Primary: "Create room" (filled black button)
+- Secondary: "Join room" (outlined button)
+
+<img src="../ui-previews/00008-minimalistic-ui-redesign/landing.png" width="600">
+
+### 2. Landing Page - Join Room
+When user clicks "Join room", form expands to show room code input with tracking-wider monospace font:
+
+<img src="../ui-previews/00008-minimalistic-ui-redesign/join-room.png" width="600">
+
+### 3. Room Page - Movie Swiping
+Main swiping interface showing:
+- Header with CineMatch logo and copy-to-clipboard room code
+- Progress bar (1 of 50 movies)
+- Match counter
+- Movie card with placeholder poster, title, year, genre, description
+- Pass (outlined) and Like (filled) buttons
+
+<img src="../ui-previews/00008-minimalistic-ui-redesign/room.png" width="600">
+
 ## Testing Checklist
 
-- [ ] Landing page renders correctly
-- [ ] Can create room
-- [ ] Can join room with code
-- [ ] Movie cards display properly
-- [ ] Like/pass buttons work
+- [x] Landing page renders correctly
+- [x] Can create room
+- [x] Can join room with code
+- [x] Movie cards display properly
+- [x] Like/pass buttons work
 - [ ] Match modal appears
 - [ ] Responsive on mobile
 - [ ] Dark mode (optional)
