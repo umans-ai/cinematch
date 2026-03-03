@@ -3,9 +3,19 @@ name: CI/CD
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'operations/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [main]
     types: [opened, synchronize, closed]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'operations/**'
+      - '.github/workflows/**'
 
 env:
   AWS_REGION: eu-west-1

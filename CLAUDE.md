@@ -195,6 +195,19 @@ The order matters for fast feedback:
 
 Always run `just check` before committing.
 
+## CI/CD Pipeline Safety
+
+**Before pushing to main:**
+1. **Check pipeline status** - Run `gh run list` and verify no runs are in progress
+2. **Wait for completion** - Never push if a deploy job is running (Terraform lock risk)
+3. **Batch changes** - Avoid rapid successive pushes; wait for CI to complete
+
+**Pipeline triggers (paths):**
+- CI runs on: `backend/**`, `frontend/**`, `operations/**`, `.github/workflows/**`
+- CI skips on: `docs/**`, `*.md` (unless workflow files changed)
+
+See `.github/workflows/ci-cd.yml` for exact path filters.
+
 ## Deployment
 
 ### Environments
