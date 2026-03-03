@@ -6,7 +6,7 @@ resource "aws_lb" "cinematch" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = data.terraform_remote_state.foundation.outputs.public_subnet_ids
+  subnets            = aws_subnet.public[*].id
 
   enable_deletion_protection = false
 
@@ -20,7 +20,7 @@ resource "aws_lb_target_group" "backend" {
   name        = "cinematch-backend-${terraform.workspace}"
   port        = 8000
   protocol    = "HTTP"
-  vpc_id      = data.terraform_remote_state.foundation.outputs.vpc_id
+  vpc_id      = aws_vpc.cinematch.id
   target_type = "ip"
 
   health_check {
@@ -42,7 +42,7 @@ resource "aws_lb_target_group" "frontend" {
   name        = "cinematch-frontend-${terraform.workspace}"
   port        = 3000
   protocol    = "HTTP"
-  vpc_id      = data.terraform_remote_state.foundation.outputs.vpc_id
+  vpc_id      = aws_vpc.cinematch.id
   target_type = "ip"
 
   health_check {

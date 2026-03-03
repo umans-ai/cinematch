@@ -53,6 +53,11 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# LEGACY NOTE:
+# This VPC is currently used by production environment.
+# New environments (previews, future prod) use per-environment VPC in 01-service.
+# This file will be removed once production is migrated to the new per-env VPC.
+
 data "aws_availability_zones" "available" {
   state = "available"
 }

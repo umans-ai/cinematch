@@ -24,13 +24,14 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "sqlite:////tmp/cinematch.db"
+          value = "postgresql://${aws_db_instance.cinematch.username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.cinematch.endpoint}/${aws_db_instance.cinematch.db_name}"
         },
         {
           name  = "CORS_ORIGINS"
           value = "https://${local.domain}"
         }
       ]
+      secrets = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -90,7 +91,7 @@ resource "aws_ecs_service" "backend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = data.terraform_remote_state.foundation.outputs.public_subnet_ids
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }
@@ -101,7 +102,7 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8000
   }
 
-  depends_on = [aws_lb_listener.https]
+  depends_on = [aws_lb_listener.https, aws_db_instance.cinematch]
 
   deployment_circuit_breaker {
     enable   = true
@@ -118,7 +119,7 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = data.terraform_remote_state.foundation.outputs.public_subnet_ids
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }
