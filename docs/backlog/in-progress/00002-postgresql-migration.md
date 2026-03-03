@@ -148,3 +148,28 @@ When ready to migrate prod:
 4. **Incremental delivery** - we unblock PostgreSQL without blocking on prod migration
 
 See ADR 004 for full rationale.
+
+## Current Blocker
+
+### Issue
+CI/CD deployment fails with IAM permission error:
+```
+AccessDenied: User is not authorized to perform: rds:CreateDBSubnetGroup
+```
+
+### Required Action
+Add RDS permissions to the GitHub Actions IAM role (`GitHubActionsCinematchRole`):
+
+**Required permissions:**
+- `rds:CreateDBSubnetGroup`
+- `rds:DeleteDBSubnetGroup`
+- `rds:ModifyDBSubnetGroup`
+- `rds:DescribeDBSubnetGroups`
+- `rds:CreateDBInstance`
+- `rds:DeleteDBInstance`
+- `rds:ModifyDBInstance`
+- `rds:DescribeDBInstances`
+
+### Alternative (if IAM changes blocked)
+Use **Supabase** instead of RDS - requires only `DATABASE_URL` env var, no AWS permissions needed.
+This would still meet the increment's goal of PostgreSQL migration.
