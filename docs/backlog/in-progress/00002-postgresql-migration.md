@@ -102,3 +102,49 @@ tests/
 - [x] testcontainers-based PostgreSQL fixtures with retry logic
 - [x] Persistence tests: given/when/then pattern for Room entity
 - [x] Migration tests: upgrade/downgrade/idempotency/data integrity
+
+## Infrastructure Restructuring Plan
+
+### Problem
+Current structure has VPC in `00-foundation` (shared), but VPC should be per-environment for:
+- True reproducibility (preview = exact prod replica)
+- Complete isolation between environments
+- No convergence between envs
+
+### Migration Strategy
+
+#### Phase 1: Dual-Path (This PR)
+Create VPC per-environment in `01-service` for NEW environments only.
+Keep existing prod on current VPC to avoid risky migration.
+
+```
+01-service/vpc.tf       # NEW: per-env VPC (previews use this)
+01-service/rds.tf       # NEW: PostgreSQL in per-env VPC
+operations/00-foundation/vpc.tf  # KEEP: existing prod VPC
+```
+
+#### Phase 2: Foundation Cleanup (Future)
+When ready to migrate prod:
+1. Create new prod VPC in 01-service
+2. Create RDS in new prod VPC
+3. Migrate data (pg_dump/pg_restore)
+4. Switch DNS to new ALB
+5. Destroy old foundation VPC
+
+#### Phase 3: Foundation Re-definition
+00-foundation keeps only truly shared resources:
+- ECR repositories
+- Route53 zone
+- ACM certificate (wildcard)
+
+### Decision
+**Preview environments** use new per-env VPC in 01-service.
+**Production** stays on existing VPC until manual migration planned.
+
+### Why This Approach
+1. **No downtime risk** for existing prod
+2. **Previews immediately benefit** from proper isolation
+3. **Production migration** is a conscious, planned operation
+4. **Incremental delivery** - we unblock PostgreSQL without blocking on prod migration
+
+See ADR 004 for full rationale.
