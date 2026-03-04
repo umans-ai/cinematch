@@ -85,12 +85,17 @@ Dark theme with CineMatch branding, red gradient logo icon, and clear CTAs.
 
 <img src="../ui-previews/00008-minimalistic-ui-redesign/landing-final.png" width="600">
 
-### 2. Room Page - Movie Swiping
+### 2. Join Room Flow
+Clicking "Join room" reveals the room code input field with monospace font for the 4-digit code.
+
+<img src="../ui-previews/00008-minimalistic-ui-redesign/join-room-final.png" width="600">
+
+### 3. Room Page - Movie Swiping
 Main interface with fixed card layout, always-visible Pass/Like buttons, progress bar, and "Tap for details" indicator.
 
 <img src="../ui-previews/00008-minimalistic-ui-redesign/room-final.png" width="600">
 
-### 3. Movie Detail Modal
+### 4. Movie Detail Modal
 Full movie information with complete description, larger poster, and close button.
 
 <img src="../ui-previews/00008-minimalistic-ui-redesign/detail-modal.png" width="600">
