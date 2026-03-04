@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Star } from "lucide-react";
 
 interface Movie {
   id: number;
@@ -11,11 +11,35 @@ interface Movie {
   genre?: string;
   description?: string;
   poster_url?: string;
+  // TMDB fields
+  tmdb_id?: number;
+  poster_path?: string;
+  backdrop_path?: string;
+  vote_average?: number;
+}
+
+interface MovieDetail extends Movie {
+  overview?: string;
+  trailer_key?: string;
 }
 
 interface Match {
   movie: Movie;
   participants: string[];
+}
+
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
+
+function posterUrl(movie: Movie): string | null {
+  if (movie.poster_path) return `${TMDB_IMAGE_BASE}/w500${movie.poster_path}`;
+  if (movie.poster_url) return movie.poster_url;
+  return null;
+}
+
+function backdropUrl(movie: Movie): string | null {
+  if (movie.backdrop_path) return `${TMDB_IMAGE_BASE}/w780${movie.backdrop_path}`;
+  if (movie.poster_url) return movie.poster_url;
+  return null;
 }
 
 export default function RoomPage() {
@@ -27,16 +51,23 @@ export default function RoomPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [showMatch, setShowMatch] = useState<Match | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [movieDetail, setMovieDetail] = useState<MovieDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previousMatchIds, setPreviousMatchIds] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchMovies = useCallback(async () => {
+  const fetchMovies = useCallback(async (page = 1) => {
     try {
-      const response = await fetch(`/api/v1/movies?code=${code}`);
+      const response = await fetch(`/api/v1/movies?code=${code}&page=${page}`);
       const data = await response.json();
-      setMovies(data);
+      if (page === 1) {
+        setMovies(data);
+      } else {
+        setMovies((prev) => [...prev, ...data]);
+      }
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
@@ -48,18 +79,15 @@ export default function RoomPage() {
       const response = await fetch(`/api/v1/votes/matches?code=${code}`);
       const data = await response.json();
 
-      // Detect NEW matches by comparing with previously seen match IDs
       const currentMatchIds = new Set<number>(data.map((m: Match) => m.movie.id));
       const newMatches = data.filter(
         (m: Match) => !previousMatchIds.has(m.movie.id)
       );
 
-      // If there are new matches, show the first one immediately
       if (newMatches.length > 0 && !finished) {
         setShowMatch(newMatches[0]);
       }
 
-      // Update previous match IDs for next comparison
       setPreviousMatchIds(currentMatchIds);
       setMatches(data);
     } catch (error) {
@@ -67,8 +95,21 @@ export default function RoomPage() {
     }
   }, [code, previousMatchIds, finished]);
 
+  const fetchMovieDetail = useCallback(async (movieId: number) => {
+    setLoadingDetail(true);
+    try {
+      const response = await fetch(`/api/v1/movies/${movieId}`);
+      const data = await response.json();
+      setMovieDetail(data);
+    } catch (error) {
+      console.error("Failed to fetch movie detail:", error);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchMovies();
+    fetchMovies(1);
   }, [fetchMovies]);
 
   const handleVote = async (liked: boolean) => {
@@ -92,6 +133,34 @@ export default function RoomPage() {
     } catch (error) {
       console.error("Failed to vote:", error);
     }
+  };
+
+  const handleSwipeAgain = async () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/v1/movies?code=${code}&page=${nextPage}`);
+      const data = await response.json();
+      if (data.length === 0) {
+        // No more movies
+        setLoading(false);
+        return;
+      }
+      setMovies(data);
+      setCurrentIndex(0);
+      setFinished(false);
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch more movies:", error);
+      setLoading(false);
+    }
+  };
+
+  const openDetail = (movie: Movie) => {
+    setMovieDetail(movie); // show current data immediately
+    setShowDetail(true);
+    fetchMovieDetail(movie.id); // then enrich with full detail
   };
 
   const copyRoomCode = async () => {
@@ -149,10 +218,7 @@ export default function RoomPage() {
           {matches.length > 0 && (
             <div className="space-y-3">
               {matches.map((match, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl border border-input bg-card"
-                >
+                <div key={idx} className="p-4 rounded-xl border border-input bg-card">
                   <h3 className="font-medium">{match.movie.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     {match.movie.year} • {match.movie.genre}
@@ -162,12 +228,20 @@ export default function RoomPage() {
             </div>
           )}
 
-          <button
-            onClick={() => (window.location.href = "/")}
-            className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Start over
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleSwipeAgain}
+              className="w-full h-11 px-4 rounded-lg border border-input bg-card text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              Swipe again
+            </button>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Start over
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -175,6 +249,7 @@ export default function RoomPage() {
 
   const currentMovie = movies[currentIndex];
   const progress = ((currentIndex + 1) / movies.length) * 100;
+  const poster = posterUrl(currentMovie);
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -226,26 +301,38 @@ export default function RoomPage() {
       {/* Fixed Card Container */}
       <div className="flex-1 px-6 pb-4 flex items-center justify-center min-h-0">
         <div className="w-full max-w-sm flex flex-col">
-          {/* Card - Fixed dimensions - Clickable for details */}
+          {/* Card */}
           <div
-            onClick={() => setShowDetail(true)}
+            onClick={() => openDetail(currentMovie)}
             className="rounded-2xl border border-input overflow-hidden bg-card shadow-2xl shadow-black/50 cursor-pointer hover:border-primary/50 transition-colors flex-shrink-0"
           >
-            {/* Poster Area - Fixed aspect ratio */}
+            {/* Poster Area */}
             <div className="aspect-[3/4] bg-muted relative">
-              {currentMovie?.poster_url ? (
+              {poster ? (
                 <img
-                  src={currentMovie.poster_url}
+                  src={poster}
                   alt={currentMovie.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
                   <span className="text-6xl opacity-30">🎬</span>
                 </div>
               )}
-              {/* Gradient overlay at bottom */}
+              {/* Gradient overlay */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-card to-transparent" />
+
+              {/* Rating badge */}
+              {currentMovie.vote_average && (
+                <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-xs backdrop-blur-sm">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span>{currentMovie.vote_average.toFixed(1)}</span>
+                </div>
+              )}
+
               {/* Tap for more indicator */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur-sm">
                 <Info className="w-3 h-3" />
@@ -253,24 +340,36 @@ export default function RoomPage() {
               </div>
             </div>
 
-            {/* Info - Compact height */}
+            {/* Info */}
             <div className="p-4 flex flex-col">
               <h2 className="text-lg font-bold tracking-tight line-clamp-1">
                 {currentMovie?.title}
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {currentMovie?.year} • {currentMovie?.genre}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-xs text-muted-foreground">
+                  {currentMovie?.year}
+                </p>
+                {currentMovie?.genre && (
+                  <>
+                    <span className="text-xs text-muted-foreground">•</span>
+                    {currentMovie.genre.split(",").slice(0, 2).map((g) => (
+                      <span
+                        key={g}
+                        className="text-xs px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+                      >
+                        {g.trim()}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                 {currentMovie?.description || "No description available."}
-                {(currentMovie?.description?.length || 0) > 100 && (
-                  <span className="text-primary"> more</span>
-                )}
               </p>
             </div>
           </div>
 
-          {/* Actions - Always visible below card */}
+          {/* Actions */}
           <div className="flex gap-3 mt-4 flex-shrink-0">
             <button
               onClick={() => handleVote(false)}
@@ -299,7 +398,7 @@ export default function RoomPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
                 <Heart className="w-8 h-8 text-primary fill-primary" />
               </div>
-              <h2 className="text-2xl font-bold">It's a match!</h2>
+              <h2 className="text-2xl font-bold">It&apos;s a match!</h2>
               <p className="text-sm text-muted-foreground">
                 You and your friends liked
               </p>
@@ -323,7 +422,7 @@ export default function RoomPage() {
       )}
 
       {/* Movie Detail Modal */}
-      {showDetail && currentMovie && (
+      {showDetail && movieDetail && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md"
           onClick={() => setShowDetail(false)}
@@ -332,13 +431,16 @@ export default function RoomPage() {
             className="w-full max-w-md rounded-3xl bg-card border border-input shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Poster */}
+            {/* Backdrop */}
             <div className="aspect-[16/9] bg-muted relative">
-              {currentMovie.poster_url ? (
+              {backdropUrl(movieDetail) ? (
                 <img
-                  src={currentMovie.poster_url}
-                  alt={currentMovie.title}
+                  src={backdropUrl(movieDetail)!}
+                  alt={movieDetail.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
@@ -346,6 +448,14 @@ export default function RoomPage() {
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+
+              {/* Rating badge */}
+              {movieDetail.vote_average && (
+                <div className="absolute top-4 left-4 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-xs backdrop-blur-sm">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span>{movieDetail.vote_average.toFixed(1)}</span>
+                </div>
+              )}
 
               {/* Close button */}
               <button
@@ -359,24 +469,51 @@ export default function RoomPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-4 -mt-12 relative">
               <div>
-                <h2 className="text-2xl font-bold">{currentMovie.title}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {currentMovie.year} • {currentMovie.genre}
-                </p>
+                <h2 className="text-2xl font-bold">{movieDetail.title}</h2>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="text-sm text-muted-foreground">{movieDetail.year}</span>
+                  {movieDetail.genre && (
+                    <>
+                      <span className="text-sm text-muted-foreground">•</span>
+                      {movieDetail.genre.split(",").slice(0, 3).map((g) => (
+                        <span
+                          key={g}
+                          className="text-xs px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+                        >
+                          {g.trim()}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
+              <div className="max-h-48 overflow-y-auto pr-2">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {currentMovie.description || "No description available."}
+                  {loadingDetail
+                    ? movieDetail.description || "Loading..."
+                    : movieDetail.overview || movieDetail.description || "No description available."}
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowDetail(false)}
-                className="w-full h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-              >
-                Close
-              </button>
+              <div className="flex gap-3">
+                {movieDetail.trailer_key && (
+                  <a
+                    href={`https://www.youtube.com/watch?v=${movieDetail.trailer_key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 h-12 rounded-xl border border-input bg-secondary text-sm font-semibold hover:bg-secondary/80 transition-opacity flex items-center justify-center"
+                  >
+                    Watch Trailer
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowDetail(false)}
+                  className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

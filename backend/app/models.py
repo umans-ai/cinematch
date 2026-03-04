@@ -1,7 +1,7 @@
 import random
 import string
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -62,5 +62,15 @@ class Movie(Base):
     genre = Column(String(100))
     poster_url = Column(String(500))
     description = Column(String(1000))
+
+    # TMDB fields (all nullable for backward compatibility)
+    tmdb_id = Column(Integer, unique=True, index=True, nullable=True)
+    poster_path = Column(String(500), nullable=True)
+    backdrop_path = Column(String(500), nullable=True)
+    overview = Column(Text, nullable=True)
+    vote_average = Column(Float, nullable=True)
+    trailer_key = Column(String(100), nullable=True)
+    popularity = Column(Float, nullable=True)
+    cached_at = Column(DateTime(timezone=True), nullable=True)
 
     votes = relationship("Vote", back_populates="movie")

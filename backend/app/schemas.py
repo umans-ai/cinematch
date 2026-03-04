@@ -38,6 +38,18 @@ class MovieResponse(BaseModel):
     genre: Optional[str]
     poster_url: Optional[str]
     description: Optional[str]
+    tmdb_id: Optional[int] = None
+    poster_path: Optional[str] = None
+    backdrop_path: Optional[str] = None
+    vote_average: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MovieDetailResponse(MovieResponse):
+    overview: Optional[str] = None
+    trailer_key: Optional[str] = None
 
     class Config:
         from_attributes = True
