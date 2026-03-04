@@ -1,11 +1,23 @@
 ---
 name: backlog
-description: Backlog workflow management - new, start, done commands for incremental delivery
+description: Backlog workflow management - new, start, done commands for incremental delivery. Supports both admin (main branch) and contributor (feature branch) workflows.
 ---
 
 # Backlog Workflow
 
 Manage incremental delivery items following project conventions (docs/backlog/todo/, docs/backlog/in-progress/, docs/backlog/done/).
+
+## Workflow Modes
+
+### Admin Mode (Umans AI team)
+- Create and start items on `main` branch for team visibility
+- Push to `main` after each step
+- Create feature branch after starting item
+
+### Contributor Mode (external contributors)
+- Create branch first (cannot push to `main`)
+- All backlog operations happen on the feature branch
+- Everything merges to `main` via PR
 
 ## Commands
 
@@ -47,14 +59,16 @@ Create a new backlog item in `docs/backlog/todo/`:
      | 2 | [describe interaction state] | ⬜ | ⬜ |
      ```
    - Create empty folder: `docs/backlog/ui-previews/{ID}-{name}/`
-4. **Commit to main**:
-   - Must be on `main` branch with clean working directory
-   - `git add . && git commit -m "chore: add {name} 📋"`
-   - `git push origin main` (team visibility)
+4. **Commit based on workflow**:
+   - **Admin mode** (on `main` branch):
+     - `git add . && git commit -m "chore: add {name} 📋"`
+     - `git push origin main`
+   - **Contributor mode** (on feature branch):
+     - `git add . && git commit -m "chore: add {name} 📋"`
+     - No push (user will push with other commits)
 5. **Remind**: "Remember: Shippable, Valuable, Testable, Simple, Validating ✓"
 
 **Errors**:
-- Not on main → "Error: Must be on main. Current: {branch}. Run: git checkout main"
 - Uncommitted changes → "Error: Uncommitted changes. Commit or stash first."
 - Duplicate name → "Error: Item '{name}' exists in todo/ ({ID}-{name}.md)"
 
@@ -66,13 +80,13 @@ Move item from `todo/` to `in-progress/`:
 
 1. **Resolve item**: Match `id-or-name` against items in `todo/` (partial OK if unique)
 2. **Validate state**:
-   - Must be on `main` branch (error if on feature branch: "Error: Already on '{branch}'. Checkout main first.")
    - Clean working directory
 3. **Move**: `git mv todo/{file} in-progress/{file}`
 4. **Commit**: `git commit -m "chore: start {name} 🚀"`
-5. **Push**: `git push origin main`
-6. **Branch (optional)**:
-   - Without `--with-branch`: Stay on main (direct push workflow)
+5. **Push based on workflow**:
+   - **Admin mode** (on `main`): `git push origin main`
+   - **Contributor mode** (on feature branch): No push yet
+6. **Branch (optional, admin mode only)**:
    - With `--with-branch`: `git checkout -b {name}`
 
 **Errors**:
@@ -133,14 +147,15 @@ Show backlog state:
 
 ## Principles
 
-1. **New/Start on main, Done on branch** - Create and start items on main for visibility; complete on feature branch so "done" commit merges with PR
-2. **Direct push for docs/chores** - Simple changes stay on main, no branch needed
-3. **Branches for code changes** - Use branches for anything needing preview/validation
-4. **Ship criteria is a statement** - What must be true, not a checklist of constraints
-5. **Done before merge** - `/backlog done` captures "ready to ship", merge follows
-6. **Never merge red pipelines** - Always verify CI passes before merging. Red pipeline = fix first, merge never
-7. **Docs with code** - Update all impacted documentation before completing item
-8. **Continuous retro** - Capture learnings as improvement items (type: `retro`)
+1. **Dual workflow support** - Admins use main branch for visibility; contributors do everything on feature branch (cannot push to main)
+2. **Same git operations** - Both modes use `git add`, `git mv`, `git commit` identically; only the branch differs
+3. **Direct push for docs/chores (admins only)** - Simple changes stay on main, no branch needed
+4. **Branches for code changes** - Use branches for anything needing preview/validation
+5. **Ship criteria is a statement** - What must be true, not a checklist of constraints
+6. **Done before merge** - `/backlog done` captures "ready to ship", merge follows
+7. **Never merge red pipelines** - Always verify CI passes before merging. Red pipeline = fix first, merge never
+8. **Docs with code** - Update all impacted documentation before completing item
+9. **Continuous retro** - Capture learnings as improvement items (type: `retro`)
 
 ---
 
