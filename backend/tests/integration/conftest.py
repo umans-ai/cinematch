@@ -21,12 +21,12 @@ def postgres_container():
 
     # Wait for PostgreSQL to be ready
     import time
-    import psycopg2
+    import psycopg
 
     port = postgres.get_exposed_port(5432)
     for _ in range(10):
         try:
-            conn = psycopg2.connect(
+            conn = psycopg.connect(
                 host="localhost",
                 port=port,
                 user="test",
@@ -35,7 +35,7 @@ def postgres_container():
             )
             conn.close()
             break
-        except psycopg2.OperationalError:
+        except psycopg.OperationalError:
             time.sleep(0.5)
 
     yield postgres
@@ -44,8 +44,11 @@ def postgres_container():
 
 @pytest.fixture(scope="function")
 def database_url(postgres_container):
-    """Get the database URL from the running container."""
-    return postgres_container.get_connection_url()
+    """Get the database URL from the running container using psycopg 3 driver."""
+    # Build URL manually for psycopg 3 compatibility
+    # testcontainers.get_connection_url() returns psycopg2 URL by default
+    port = postgres_container.get_exposed_port(5432)
+    return f"postgresql+psycopg://test:test@localhost:{port}/test"
 
 
 @pytest.fixture(scope="function")
