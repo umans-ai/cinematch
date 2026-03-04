@@ -183,12 +183,21 @@ docker-compose down
 ```
 > "Frontend React (Next.js) ↔ Backend API (FastAPI) ↔ Base de données (SQLite en local, PostgreSQL en prod)"
 
-**Workflow (30 secondes)**:
-> "1. Créer un backlog item dans `docs/backlog/todo/`"
-> "2. Le déplacer vers `in-progress/` quand on commence"
-> "3. Créer une branche, committer, ouvrir une PR"
-> "4. La PR crée automatiquement un environnement de preview"
-> "5. Review → merge avec rebase"
+**Workflow de contribution (30 secondes)**:
+> "Même workflow que les admins, mais **sur ta branche** (pas de push sur `main`)."
+> ```
+> git checkout -b 00005-ma-feature                    # Créer branche
+> git add docs/backlog/todo/00005.md                  # Créer dans todo/
+> git commit -m "chore: add ma-feature 📋"
+> git mv docs/backlog/todo/00005.md docs/backlog/in-progress/  # Déplacer vers in-progress/
+> git commit -m "chore: start ma-feature 🚀"
+> # ... développement ...
+> git mv docs/backlog/in-progress/00005.md docs/backlog/done/  # Déplacer vers done/
+> git commit -m "chore: complete ma-feature ✅"
+> git push origin 00005-ma-feature                    # Push + PR
+> ```
+> "La PR déploie un preview. Review → merge → tout atterrit sur `main`."
+> "Seule différence : tu ne pushes jamais sur `main`, tout se passe sur ta branche."
 
 **Key conventions to remember**:
 - **Conventional commits**: `feat:`, `fix:`, `docs:` avec emoji à la fin
