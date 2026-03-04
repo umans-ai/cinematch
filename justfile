@@ -1,11 +1,129 @@
-dev:
+# Local dev: fast feedback loop with PostgreSQL in Docker, code running locally
+dev-local:
+    #!/usr/bin/env bash
+    set -e
+    echo "🚀 Starting local dev environment..."
+    echo ""
+
+    # Start PostgreSQL if not running
+    if ! docker-compose -f docker-compose.deps.yml ps | grep -q "Up"; then
+        echo "📦 Starting PostgreSQL..."
+        docker-compose -f docker-compose.deps.yml up -d
+        sleep 2
+    else
+        echo "✅ PostgreSQL already running"
+    fi
+
+    # Wait for PostgreSQL to be ready
+    echo "⏳ Waiting for PostgreSQL..."
+    until docker exec cinematch-postgres-1 pg_isready -U cinematch > /dev/null 2>&1; do
+        sleep 0.5
+    done
+    echo "✅ PostgreSQL ready"
+    echo ""
+
+    # Start backend in background
+    echo "🐍 Starting backend..."
+    cd backend && DATABASE_URL="postgresql+psycopg://cinematch:cinematch@localhost:5432/cinematch" uv run uvicorn app.main:app --reload --port 8000 > /tmp/cinematch-backend.log 2>&1 &
+    BACKEND_PID=$!
+    echo $BACKEND_PID > /tmp/cinematch-backend.pid
+
+    # Start frontend in background
+    echo "⚡ Starting frontend..."
+    cd frontend && pnpm dev > /tmp/cinematch-frontend.log 2>&1 &
+    FRONTEND_PID=$!
+    echo $FRONTEND_PID > /tmp/cinematch-frontend.pid
+
+    # Wait for services to be ready
+    echo "⏳ Waiting for services..."
+    sleep 3
+
+    # Show status
+    echo ""
+    echo "📊 Services:"
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        echo "   ✅ Backend:  http://localhost:8000"
+    else
+        echo "   ❌ Backend failed to start (see /tmp/cinematch-backend.log)"
+    fi
+    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        echo "   ✅ Frontend: http://localhost:3000"
+    else
+        echo "   ❌ Frontend failed to start (see /tmp/cinematch-frontend.log)"
+    fi
+    echo ""
+    echo "🧪 Ready for Playwright!"
+    echo ""
+    echo "📝 Logs:"
+    echo "   tail -f /tmp/cinematch-backend.log"
+    echo "   tail -f /tmp/cinematch-frontend.log"
+    echo ""
+    echo "🛑 Stop: just dev-local-stop"
+
+# Stop local dev services
+dev-local-stop:
+    #!/usr/bin/env bash
+    if [ -f /tmp/cinematch-backend.pid ]; then
+        kill $(cat /tmp/cinematch-backend.pid) 2>/dev/null || true
+        rm /tmp/cinematch-backend.pid
+        echo "🛑 Backend stopped"
+    fi
+    if [ -f /tmp/cinematch-frontend.pid ]; then
+        kill $(cat /tmp/cinematch-frontend.pid) 2>/dev/null || true
+        rm /tmp/cinematch-frontend.pid
+        echo "🛑 Frontend stopped"
+    fi
+    docker-compose -f docker-compose.deps.yml down
+    echo "🛑 PostgreSQL stopped"
+
+# Check if dev services are ready
+check-dev:
+    #!/usr/bin/env bash
+    set -e
+    echo "🔍 Checking dev environment..."
+    echo ""
+
+    # Check PostgreSQL (using docker exec since pg_isready may not be installed locally)
+    if docker exec cinematch-postgres-1 pg_isready -U cinematch >/dev/null 2>&1; then
+        echo "✅ PostgreSQL: localhost:5432"
+    else
+        echo "❌ PostgreSQL: not ready (run: just dev-local)"
+        exit 1
+    fi
+
+    # Check Backend
+    if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+        echo "✅ Backend:    http://localhost:8000"
+    else
+        echo "❌ Backend:    not ready (cd backend && just dev-local)"
+        exit 1
+    fi
+
+    # Check Frontend
+    if curl -s http://localhost:3000 >/dev/null 2>&1; then
+        echo "✅ Frontend:   http://localhost:3000"
+    else
+        echo "❌ Frontend:   not ready (cd frontend && just dev)"
+        exit 1
+    fi
+
+    echo ""
+    echo "🎉 All services ready! Test with Playwright:"
+    echo "   npx playwright test"
+
+# Stop local dev services
+dev-local-down:
+    docker-compose -f docker-compose.deps.yml down
+
+# Legacy docker-based dev (slower, full containerization)
+dev-docker:
     docker-compose up --build
 
-dev-logs:
-    docker-compose logs -f
-
-dev-down:
+dev-docker-down:
     docker-compose down
+
+dev-logs:
+    docker-compose -f docker-compose.deps.yml logs -f
 
 check:
     cd backend && just check

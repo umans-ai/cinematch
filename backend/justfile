@@ -1,4 +1,10 @@
-dev:
+# Local dev with PostgreSQL (fast, hot reload)
+# Uses psycopg (modern driver) instead of psycopg2
+dev-local:
+    DATABASE_URL="postgresql+psycopg://cinematch:cinematch@localhost:5432/cinematch" uv run uvicorn app.main:app --reload --port 8000
+
+# Docker dev (for CI/CD consistency)
+dev-docker:
     uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
