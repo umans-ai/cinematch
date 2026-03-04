@@ -299,7 +299,7 @@ export default function RoomPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
                 <Heart className="w-8 h-8 text-primary fill-primary" />
               </div>
-              <h2 className="text-2xl font-bold">It's a match!</h2>
+              <h2 className="text-2xl font-bold">It&apos;s a match!</h2>
               <p className="text-sm text-muted-foreground">
                 You and your friends liked
               </p>

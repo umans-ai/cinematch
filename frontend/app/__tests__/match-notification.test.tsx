@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation';
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
 
 // Mock fetch globally
