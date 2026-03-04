@@ -71,19 +71,19 @@ Move item from `todo/` to `in-progress/`:
 
 ### `/backlog done [id-or-name]`
 
-Complete an in-progress item. Use after merge to main (fluidified workflow):
+Complete an in-progress item. **Do BEFORE merge** - completion travels with the PR:
 
-**Standard flow (after PR merge):**
-1. User runs `/backlog done` from main branch
-2. Auto-detect item from `in-progress/` (if single item) or use `id-or-name`
-3. Move: `git mv in-progress/{file} done/{file}`
-4. Commit: `git commit -m "chore: complete {name} ✅"`
-5. Push: `git push origin main`
-6. Confirm: "✅ Item completed and pushed to main"
+**On feature branch (PR workflow):**
+1. Auto-detect item from branch name or use `id-or-name`
+2. Move: `git mv in-progress/{file} done/{file}`
+3. Commit: `git commit -m "chore: complete {name} ✅"`
+4. Confirm: "✅ Item complete. Ready to merge: gh pr merge --rebase"
 
-**Direct push workflow (no PR):**
-1. `id-or-name` required on main branch
-2. Same steps 3-6 above
+**On main branch (direct push workflow):**
+1. `id-or-name` required (error if missing)
+2. Move: `git mv in-progress/{file} done/{file}`
+3. Commit: `git commit -m "chore: complete {name} ✅"`
+4. Push: `git push origin main`
 
 **Errors**:
 - On main without id and multiple items → "Error: Multiple items in progress. Use: /backlog done <id-or-name>"

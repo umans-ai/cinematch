@@ -93,29 +93,25 @@ The 5-digit number is a **stable ID**, not priority.
 
 ### Completing work
 
-**Automatic workflow (fluidified):**
+**Fluid workflow:**
 
 1. Ensure all impacted docs are updated (see "Documentation Update Rule")
-2. Commit on branch: `git add . && git commit -m "..."`
+2. **Complete backlog item on branch** (before merge):
+   ```bash
+   git mv docs/backlog/in-progress/XXXXX-name.md docs/backlog/done/
+   git commit -m "chore: complete <name> ✅"
+   ```
 3. Merge to main:
    - **Direct push** (docs, chores, single-file fixes): `git merge --ff-only <branch>`
    - **PR required** (infra, features, complex refactors): create PR, merge with **rebase**
 
-4. **Immediately after merge**, move backlog item:
-   ```bash
-   git checkout main
-   git pull origin main
-   git mv docs/backlog/in-progress/XXXXX-name.md docs/backlog/done/
-   git commit -m "chore: complete <name> ✅"
-   git push origin main
-   ```
-
-For PR-required changes, always rebase and verify before merge:
+For PR-required changes:
 1. `git fetch origin`
 2. `git rebase origin/main`
-3. Re-run checks/preview verification on rebased head
-4. Merge with `gh pr merge --rebase`
-5. Then run the backlog completion commands above (step 4)
+3. Re-run checks/preview verification
+4. `gh pr merge --rebase` (brings "complete" commit to main automatically)
+
+**No double push on main** - the completion travels with the merge.
 
 ### Adding backlog items
 
