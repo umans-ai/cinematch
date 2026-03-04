@@ -33,7 +33,7 @@ class TestRoomParticipation:
 
         # Join first room
         response2 = client.post(
-            f"//api/v1/rooms/{room1_code}/join",
+            f"/api/v1/rooms/{room1_code}/join",
             json={"name": "Alice"},
             cookies={"session_id": "test-session-123"}
         )
