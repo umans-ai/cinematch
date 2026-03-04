@@ -13,7 +13,8 @@ fmt:
 typecheck:
     uv run ty check app/
 
-check: lint fmt typecheck test
+# Full check including security audit
+check: lint fmt typecheck test audit
 
 sync:
     uv sync
@@ -23,3 +24,15 @@ docker-build:
 
 docker-run:
     docker run -p 8000:8000 cinematch-backend
+
+# Security audit - scan for known vulnerabilities
+audit:
+    uv run pip-audit --desc
+
+# Check for outdated dependencies
+outdated:
+    uv run pip-outdated
+
+# Full security and maintenance check
+maintain: outdated audit check
+    @echo "✅ All maintenance checks complete"
