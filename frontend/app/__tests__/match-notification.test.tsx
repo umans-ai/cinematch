@@ -108,9 +108,9 @@ describe('Match Notification Flow', () => {
 
   /**
    * Test that the matches count updates in the UI when a match occurs,
-   * but the modal doesn't auto-trigger.
+   * and the modal auto-triggers to notify the user.
    */
-  it('should update matches count but not show modal automatically', async () => {
+  it('should update matches count and show modal automatically', async () => {
     let matchesCount = 0;
 
     mockFetch.mockImplementation((url: string) => {
@@ -168,18 +168,18 @@ describe('Match Notification Flow', () => {
       expect(screen.getByText('1 match')).toBeInTheDocument();
     });
 
-    // BUT: Match modal should NOT be visible (this demonstrates the issue)
-    // The user has to manually notice the "1 match" text instead of
-    // getting an immediate celebration modal
-    const matchModal = screen.queryByText("It's a match!");
-    expect(matchModal).not.toBeInTheDocument();
+    // Match modal should be visible after a new match is detected
+    await waitFor(() => {
+      const matchModal = screen.queryByText("It's a match!");
+      expect(matchModal).toBeInTheDocument();
+    });
   });
 
   /**
-   * Test that after finishing all movies, the match summary is shown,
-   * but real-time match notification during swiping doesn't work.
+   * Test that the match modal appears during swiping when a match is detected,
+   * and the match summary is also shown after finishing all movies.
    */
-  it('should show matches in summary after finishing but not during swiping', async () => {
+  it('should show match modal during swiping and matches in summary after finishing', async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/v1/movies?code=TEST')) {
         return Promise.resolve({
@@ -214,6 +214,11 @@ describe('Match Notification Flow', () => {
     const likeButton = screen.getByText('Like');
     fireEvent.click(likeButton);
 
+    // Match modal should appear immediately when match is detected during swiping
+    await waitFor(() => {
+      expect(screen.queryByText("It's a match!")).toBeInTheDocument();
+    });
+
     // Wait for "finished" screen
     await waitFor(() => {
       expect(screen.getByText('You found a match!')).toBeInTheDocument();
@@ -221,8 +226,5 @@ describe('Match Notification Flow', () => {
 
     // Match is shown in summary
     expect(screen.getByText('Inception')).toBeInTheDocument();
-
-    // But during the swiping (before finishing), the match modal
-    // did not automatically appear - this is the bug
   });
 });
