@@ -1,7 +1,7 @@
 import random
 import string
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -30,8 +30,11 @@ class Participant(Base):
     id = Column(Integer, primary_key=True, index=True)
     room_id = Column(Integer, ForeignKey("rooms.id"))
     name = Column(String(50))
-    session_id = Column(String(100), unique=True)
+    session_id = Column(String(100))
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # A user can join multiple rooms, but only once per room
+    __table_args__ = (UniqueConstraint("room_id", "session_id"),)
 
     room = relationship("Room", back_populates="participants")
 
