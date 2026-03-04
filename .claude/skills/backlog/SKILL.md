@@ -69,24 +69,33 @@ Move item from `todo/` to `in-progress/`:
 
 ---
 
-### `/backlog done [id-or-name]`
+### `/backlog done [id-or-name] [--retro]`
 
-Complete an in-progress item. **Do BEFORE merge** - completion travels with the PR:
+Complete an in-progress item. **Use AFTER verification, BEFORE merge**:
 
-**On feature branch (PR workflow):**
-1. Auto-detect item from branch name or use `id-or-name`
-2. Move: `git mv in-progress/{file} done/{file}`
-3. Commit: `git commit -m "chore: complete {name} ✅"`
-4. Confirm: "✅ Item complete. Ready to merge: gh pr merge --rebase"
+**PR workflow (after preview verified):**
+1. PR created, pipeline passed, preview tested
+2. User runs `/backlog done` from feature branch
+3. Auto-detect item from `in-progress/` or use `id-or-name`
+4. Switch to main, pull latest
+5. Move: `git mv in-progress/{file} done/{file}`
+6. Commit: `git commit -m "chore: complete {name} ✅"`
+7. Push: `git push origin main`
+8. Return to branch: `git checkout {branch}`
+9. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
 
-**On main branch (direct push workflow):**
-1. `id-or-name` required (error if missing)
-2. Move: `git mv in-progress/{file} done/{file}`
-3. Commit: `git commit -m "chore: complete {name} ✅"`
-4. Push: `git push origin main`
+**Direct push workflow (docs/chores):**
+1. User on main branch
+2. `id-or-name` required
+3. Move item, commit, push
+4. Then merge: `git merge --ff-only {branch}`
+
+**With continuous retro** (`--retro` flag, optional):
+- Prompts: "What was harder?" / "What to improve?"
+- Creates `docs/backlog/todo/XXXXX-retro-{topic}.md` if answers provided
 
 **Errors**:
-- On main without id and multiple items → "Error: Multiple items in progress. Use: /backlog done <id-or-name>"
+- Multiple items in progress without id → "Error: Multiple items. Use: /backlog done <id-or-name>"
 - No match → "Error: No item matching '{term}' in in-progress/."
 - Uncommitted changes → "Warning: Uncommitted changes. Commit or stash first."
 
@@ -107,5 +116,26 @@ Show backlog state:
 2. **Direct push default** - stay on main, no branch needed
 3. **Branches only for preview env** - use `--with-branch` for infra/arch changes needing validation
 4. **Ship criteria is a statement** - what must be true, not a checklist of constraints
-5. **Fluid completion** - no blocking questions; merge then `/backlog done` immediately after
+5. **Done before merge** - `/backlog done` captures "ready to ship", merge follows
 6. **Docs with code** - update all impacted documentation before completing item
+7. **Continuous retro** - capture learnings as improvement items (type: `retro`)
+
+---
+
+## Backlog Item Types
+
+### Standard Items
+Format: `XXXXX-name.md` (5-digit ID)
+
+Used for features, fixes, refactors, etc.
+
+### Retro/Improvement Items
+Format: `XXXXX-retro-{topic}.md` or `XXXXX-improvement-{area}.md`
+
+Created during `/backlog done --retro` to capture:
+- Process improvements
+- Documentation gaps discovered
+- Tooling frustrations
+- Architecture insights
+
+These are **optional** and **non-blocking** - add them when there's something concrete to improve.

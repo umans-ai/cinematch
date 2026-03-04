@@ -93,25 +93,39 @@ The 5-digit number is a **stable ID**, not priority.
 
 ### Completing work
 
-**Fluid workflow:**
+**PR workflow (recommended for most changes):**
 
-1. Ensure all impacted docs are updated (see "Documentation Update Rule")
-2. **Complete backlog item on branch** (before merge):
+1. **Code ready**: Implementation + tests + docs updated
+   - Run `just check` locally
+   - Update increment file with screenshots if UI changes
+2. **Create PR**: `gh pr create --title "..." --body "..."`
+   - Include walkthrough in PR description
+3. **Verify pipeline**: Wait for checks and preview deployment
+4. **Test preview**: Verify at `demo-pr-{N}.cinematch.umans.ai`
+5. **`/backlog done` on branch**: Mark item ready to merge
    ```bash
+   # From feature branch, after all verification
+   git checkout main
+   git pull origin main
    git mv docs/backlog/in-progress/XXXXX-name.md docs/backlog/done/
    git commit -m "chore: complete <name> ✅"
+   git push origin main
+   git checkout <branch>
    ```
-3. Merge to main:
-   - **Direct push** (docs, chores, single-file fixes): `git merge --ff-only <branch>`
-   - **PR required** (infra, features, complex refactors): create PR, merge with **rebase**
+6. **Merge**: `gh pr merge --rebase`
+7. **Verify production**: `git checkout main && git pull`, check `demo.cinematch.umans.ai`
 
-For PR-required changes:
-1. `git fetch origin`
-2. `git rebase origin/main`
-3. Re-run checks/preview verification
-4. `gh pr merge --rebase` (brings "complete" commit to main automatically)
+**Direct push workflow (docs, chores, trivial fixes only):**
 
-**No double push on main** - the completion travels with the merge.
+1. Code ready on branch
+2. Fast-forward merge: `git checkout main && git merge --ff-only <branch>`
+3. `/backlog done`: Move item to done on main
+4. Push: `git push origin main`
+
+**Continuous Retro** (optional, during step 5):
+- What was harder than expected?
+- What would improve next time?
+- Add `retro:` items to todo/ if concrete
 
 ### Adding backlog items
 
