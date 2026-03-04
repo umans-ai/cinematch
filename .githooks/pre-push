@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 Running pre-push checks..."
+echo ""
+
+# Safety net in case pre-commit was bypassed
+if ! just check; then
+    echo ""
+    echo "❌ Pre-push checks failed"
+    echo "   Cannot push failing code"
+    exit 1
+fi
+
+echo ""
+echo "✅ All checks passed - pushing..."

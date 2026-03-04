@@ -25,6 +25,23 @@ docker-compose up
 
 Open http://localhost:3000
 
+### Git Hooks Setup
+
+Install pre-commit hooks to enforce code quality (one-time setup):
+
+```bash
+./scripts/install-hooks.sh
+```
+
+Hooks run automatically:
+- **pre-commit**: Runs `just check` (lint + typecheck + tests) before each commit
+- **pre-push**: Safety net if pre-commit bypassed
+
+To bypass hooks (not recommended):
+```bash
+git commit --no-verify
+```
+
 ## Usage
 
 1. **Create a room** - Click "Create Room", get a 4-digit code
