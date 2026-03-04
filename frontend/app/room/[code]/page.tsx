@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Play, Star } from "lucide-react";
 
 interface Movie {
   id: number;
@@ -11,6 +11,9 @@ interface Movie {
   genre?: string;
   description?: string;
   poster_url?: string;
+  imdb_rating?: number;
+  backdrop_url?: string;
+  trailer_key?: string;
 }
 
 interface Match {
@@ -48,18 +51,15 @@ export default function RoomPage() {
       const response = await fetch(`/api/v1/votes/matches?code=${code}`);
       const data = await response.json();
 
-      // Detect NEW matches by comparing with previously seen match IDs
       const currentMatchIds = new Set<number>(data.map((m: Match) => m.movie.id));
       const newMatches = data.filter(
         (m: Match) => !previousMatchIds.has(m.movie.id)
       );
 
-      // If there are new matches, show the first one immediately
       if (newMatches.length > 0 && !finished) {
         setShowMatch(newMatches[0]);
       }
 
-      // Update previous match IDs for next comparison
       setPreviousMatchIds(currentMatchIds);
       setMatches(data);
     } catch (error) {
@@ -226,12 +226,12 @@ export default function RoomPage() {
       {/* Fixed Card Container */}
       <div className="flex-1 px-6 pb-4 flex items-center justify-center min-h-0">
         <div className="w-full max-w-sm flex flex-col">
-          {/* Card - Fixed dimensions - Clickable for details */}
+          {/* Card */}
           <div
             onClick={() => setShowDetail(true)}
             className="rounded-2xl border border-input overflow-hidden bg-card shadow-2xl shadow-black/50 cursor-pointer hover:border-primary/50 transition-colors flex-shrink-0"
           >
-            {/* Poster Area - Fixed aspect ratio */}
+            {/* Poster Area */}
             <div className="aspect-[3/4] bg-muted relative">
               {currentMovie?.poster_url ? (
                 <img
@@ -244,8 +244,15 @@ export default function RoomPage() {
                   <span className="text-6xl opacity-30">🎬</span>
                 </div>
               )}
-              {/* Gradient overlay at bottom */}
+              {/* Gradient overlay */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-card to-transparent" />
+              {/* IMDB rating badge */}
+              {currentMovie?.imdb_rating != null && (
+                <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-yellow-400 text-xs font-semibold backdrop-blur-sm">
+                  <Star className="w-3 h-3 fill-current" />
+                  <span>{currentMovie.imdb_rating.toFixed(1)}</span>
+                </div>
+              )}
               {/* Tap for more indicator */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur-sm">
                 <Info className="w-3 h-3" />
@@ -253,7 +260,7 @@ export default function RoomPage() {
               </div>
             </div>
 
-            {/* Info - Compact height */}
+            {/* Info */}
             <div className="p-4 flex flex-col">
               <h2 className="text-lg font-bold tracking-tight line-clamp-1">
                 {currentMovie?.title}
@@ -270,7 +277,7 @@ export default function RoomPage() {
             </div>
           </div>
 
-          {/* Actions - Always visible below card */}
+          {/* Actions */}
           <div className="flex gap-3 mt-4 flex-shrink-0">
             <button
               onClick={() => handleVote(false)}
@@ -299,7 +306,7 @@ export default function RoomPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
                 <Heart className="w-8 h-8 text-primary fill-primary" />
               </div>
-              <h2 className="text-2xl font-bold">It's a match!</h2>
+              <h2 className="text-2xl font-bold">It&apos;s a match!</h2>
               <p className="text-sm text-muted-foreground">
                 You and your friends liked
               </p>
@@ -332,11 +339,11 @@ export default function RoomPage() {
             className="w-full max-w-md rounded-3xl bg-card border border-input shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Poster */}
+            {/* Modal header image: backdrop preferred, poster fallback */}
             <div className="aspect-[16/9] bg-muted relative">
-              {currentMovie.poster_url ? (
+              {(currentMovie.backdrop_url || currentMovie.poster_url) ? (
                 <img
-                  src={currentMovie.poster_url}
+                  src={currentMovie.backdrop_url ?? currentMovie.poster_url!}
                   alt={currentMovie.title}
                   className="w-full h-full object-cover"
                 />
@@ -359,7 +366,15 @@ export default function RoomPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-4 -mt-12 relative">
               <div>
-                <h2 className="text-2xl font-bold">{currentMovie.title}</h2>
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="text-2xl font-bold">{currentMovie.title}</h2>
+                  {currentMovie.imdb_rating != null && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-yellow-500 text-sm font-semibold shrink-0">
+                      <Star className="w-3.5 h-3.5 fill-current" />
+                      <span>{currentMovie.imdb_rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {currentMovie.year} • {currentMovie.genre}
                 </p>
@@ -371,12 +386,25 @@ export default function RoomPage() {
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowDetail(false)}
-                className="w-full h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-              >
-                Close
-              </button>
+              <div className="flex gap-3">
+                {currentMovie.trailer_key && (
+                  <a
+                    href={`https://www.youtube.com/watch?v=${currentMovie.trailer_key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 h-12 rounded-xl border-2 border-input bg-card flex items-center justify-center gap-2 text-sm font-semibold hover:bg-secondary transition-all"
+                  >
+                    <Play className="w-4 h-4" />
+                    Watch Trailer
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowDetail(false)}
+                  className="flex-1 h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

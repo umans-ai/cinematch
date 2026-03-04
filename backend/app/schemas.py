@@ -38,6 +38,9 @@ class MovieResponse(BaseModel):
     genre: Optional[str]
     poster_url: Optional[str]
     description: Optional[str]
+    imdb_rating: Optional[float] = None
+    backdrop_url: Optional[str] = None
+    trailer_key: Optional[str] = None
 
     class Config:
         from_attributes = True

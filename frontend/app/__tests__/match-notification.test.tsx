@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation';
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
 
 // Mock fetch globally
@@ -140,7 +141,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -202,7 +203,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
