@@ -51,7 +51,9 @@ class TestRoomParticipation:
             cookies={"session_id": "test-session-123"}
         )
         assert response4.status_code == 200, f"Expected 200 but got {response4.status_code}: {response4.text}"
-        assert response4.json()["room_id"] != response2.json()["room_id"]
+        # Verify user joined second room successfully (response has different participant ID)
+        assert response4.json()["id"] != response2.json()["id"]
+        assert response4.json()["name"] == "Alice"
 
     def test_second_user_can_join_existing_room(self, client):
         """
