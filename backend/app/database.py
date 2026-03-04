@@ -21,7 +21,9 @@ if DATABASE_URL.startswith("sqlite"):
         if not db_path.startswith("/"):
             db_path = "/" + db_path
         db_dir = Path(db_path).parent
-        db_dir.mkdir(parents=True, exist_ok=True)
+        # Only create directory if it's not a system temp directory
+        if str(db_dir) not in ("/tmp", "/var/tmp"):
+            db_dir.mkdir(parents=True, exist_ok=True)
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
     engine = create_engine(DATABASE_URL)
