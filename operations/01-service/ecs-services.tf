@@ -1,6 +1,13 @@
 # ECS Services and Task Definitions
 # Per-environment ECS services (frontend and backend)
 
+# Database URL - SQLite for production (legacy), PostgreSQL for previews
+locals {
+  database_url = length(aws_db_instance.cinematch) > 0 ? (
+    "postgresql://${aws_db_instance.cinematch[0].username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.cinematch[0].endpoint}/${aws_db_instance.cinematch[0].db_name}"
+  ) : "sqlite:///tmp/cinematch.db"
+}
+
 # Backend Task Definition
 resource "aws_ecs_task_definition" "backend" {
   family                   = "cinematch-backend-${terraform.workspace}"
@@ -24,7 +31,7 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${aws_db_instance.cinematch.username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.cinematch.endpoint}/${aws_db_instance.cinematch.db_name}"
+          value = local.database_url
         },
         {
           name  = "CORS_ORIGINS"
@@ -91,7 +98,7 @@ resource "aws_ecs_service" "backend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = local.public_subnet_ids
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }
@@ -102,7 +109,7 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8000
   }
 
-  depends_on = [aws_lb_listener.https, aws_db_instance.cinematch]
+  depends_on = [aws_lb_listener.https]
 
   deployment_circuit_breaker {
     enable   = true
@@ -119,7 +126,7 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = local.public_subnet_ids
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }

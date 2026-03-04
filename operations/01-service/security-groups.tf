@@ -4,7 +4,7 @@
 resource "aws_security_group" "alb" {
   name        = "cinematch-alb-${terraform.workspace}"
   description = "ALB for CineMatch ${terraform.workspace}"
-  vpc_id      = aws_vpc.cinematch.id
+  vpc_id      = local.vpc_id
 
   ingress {
     protocol    = "tcp"
@@ -35,7 +35,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "ecs" {
   name        = "cinematch-ecs-${terraform.workspace}"
   description = "ECS tasks for CineMatch ${terraform.workspace}"
-  vpc_id      = aws_vpc.cinematch.id
+  vpc_id      = local.vpc_id
 
   ingress {
     protocol        = "tcp"

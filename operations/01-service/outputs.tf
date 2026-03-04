@@ -10,15 +10,15 @@ output "alb_dns" {
 
 output "vpc_id" {
   description = "VPC ID"
-  value       = aws_vpc.cinematch.id
+  value       = local.vpc_id
 }
 
 output "db_endpoint" {
-  description = "RDS endpoint"
-  value       = aws_db_instance.cinematch.endpoint
+  description = "RDS endpoint (null for production/SQLite)"
+  value       = length(aws_db_instance.cinematch) > 0 ? aws_db_instance.cinematch[0].endpoint : null
 }
 
 output "db_name" {
-  description = "RDS database name"
-  value       = aws_db_instance.cinematch.db_name
+  description = "RDS database name (null for production/SQLite)"
+  value       = length(aws_db_instance.cinematch) > 0 ? aws_db_instance.cinematch[0].db_name : null
 }
