@@ -53,7 +53,7 @@ export default function Home() {
       router.push(`/room/${roomCode.trim()}`);
     } catch (error) {
       console.error("Failed to join room:", error);
-      alert("Invalid room code");
+      alert("Invalid room code or room is full");
       setIsJoining(false);
     }
   };
