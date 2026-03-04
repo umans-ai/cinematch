@@ -26,8 +26,11 @@ docker-run:
     docker run -p 8000:8000 cinematch-backend
 
 # Security audit - scan for known vulnerabilities
+# Note: Starlette CVEs ignored (blocked by FastAPI dependency):
+# - CVE-2025-54121: UploadFile spooling (very low impact, we don't use large file uploads)
+# - CVE-2025-62727: FileResponse Range header (we don't use FileResponse/StaticFiles)
 audit:
-    uv run pip-audit --desc
+    uv run pip-audit --desc --ignore-vuln=CVE-2025-54121 --ignore-vuln=CVE-2025-62727
 
 # Check for outdated dependencies
 outdated:
