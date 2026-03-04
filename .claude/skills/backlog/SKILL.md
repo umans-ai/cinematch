@@ -96,18 +96,17 @@ Complete an in-progress item. **Use AFTER verification, BEFORE merge**:
    - For each scenario with status ⬜, check screenshot file exists:
      - Expected: `docs/backlog/ui-previews/{ID}-{name}/{NN}-{scenario-name}.png`
    - **Error if mismatch**: "Error: UI scenarios incomplete. Missing: 03-filter-dropdown.png. Run agent-browser to capture."
-5. Switch to main, pull latest
-6. Move: `git mv in-progress/{file} done/{file}`
-7. Commit: `git commit -m "chore: complete {name} ✅"`
-8. Push: `git push origin main`
-9. Return to branch: `git checkout {branch}`
-10. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
+5. Move: `git mv in-progress/{file} done/{file}`
+6. Commit: `git commit -m "chore: complete {name} ✅"`
+7. Push: `git push origin {branch}`
+8. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
 
-**Direct push workflow (docs/chores):**
-1. User on main branch
+**Direct push workflow (docs/chores only):**
+1. Must be on main branch
 2. `id-or-name` required
-3. Move item, commit, push
-4. Then merge: `git merge --ff-only {branch}`
+3. Move item: `git mv in-progress/{file} done/{file}`
+4. Commit: `git commit -m "chore: complete {name} ✅"`
+5. Push: `git push origin main`
 
 **With continuous retro** (`--retro` flag, optional):
 - Prompts: "What was harder?" / "What to improve?"
@@ -132,13 +131,13 @@ Show backlog state:
 
 ## Principles
 
-1. **Every state change commits to main** - team visibility
-2. **Direct push default** - stay on main, no branch needed
-3. **Branches only for preview env** - use `--with-branch` for infra/arch changes needing validation
-4. **Ship criteria is a statement** - what must be true, not a checklist of constraints
+1. **New/Start on main, Done on branch** - Create and start items on main for visibility; complete on feature branch so "done" commit merges with PR
+2. **Direct push for docs/chores** - Simple changes stay on main, no branch needed
+3. **Branches for code changes** - Use branches for anything needing preview/validation
+4. **Ship criteria is a statement** - What must be true, not a checklist of constraints
 5. **Done before merge** - `/backlog done` captures "ready to ship", merge follows
-6. **Docs with code** - update all impacted documentation before completing item
-7. **Continuous retro** - capture learnings as improvement items (type: `retro`)
+6. **Docs with code** - Update all impacted documentation before completing item
+7. **Continuous retro** - Capture learnings as improvement items (type: `retro`)
 
 ---
 
