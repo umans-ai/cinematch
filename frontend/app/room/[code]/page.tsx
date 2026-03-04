@@ -128,8 +128,39 @@ export default function RoomPage() {
     );
   }
 
+  const matchModal = showMatch ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-card p-6 space-y-6 border border-input shadow-2xl">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
+            <Heart className="w-8 h-8 text-primary fill-primary" />
+          </div>
+          <h2 className="text-2xl font-bold">It&apos;s a match!</h2>
+          <p className="text-sm text-muted-foreground">
+            You and your friends liked
+          </p>
+        </div>
+
+        <div className="p-4 rounded-xl border border-input bg-background">
+          <h3 className="font-semibold">{showMatch.movie.title}</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {showMatch.movie.year} • {showMatch.movie.genre}
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowMatch(null)}
+          className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   if (finished) {
     return (
+      <>
       <main className="min-h-screen p-6">
         <div className="max-w-sm mx-auto pt-12 space-y-8">
           <div className="text-center space-y-3">
@@ -170,6 +201,8 @@ export default function RoomPage() {
           </button>
         </div>
       </main>
+      {matchModal}
+      </>
     );
   }
 
@@ -292,35 +325,7 @@ export default function RoomPage() {
       </div>
 
       {/* Match Modal */}
-      {showMatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 space-y-6 border border-input shadow-2xl">
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
-                <Heart className="w-8 h-8 text-primary fill-primary" />
-              </div>
-              <h2 className="text-2xl font-bold">It's a match!</h2>
-              <p className="text-sm text-muted-foreground">
-                You and your friends liked
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-input bg-background">
-              <h3 className="font-semibold">{showMatch.movie.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {showMatch.movie.year} • {showMatch.movie.genre}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setShowMatch(null)}
-              className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
+      {matchModal}
 
       {/* Movie Detail Modal */}
       {showDetail && currentMovie && (

@@ -107,10 +107,9 @@ describe('Match Notification Flow', () => {
   });
 
   /**
-   * Test that the matches count updates in the UI when a match occurs,
-   * but the modal doesn't auto-trigger.
+   * Test that the match modal appears automatically when a match is detected.
    */
-  it('should update matches count but not show modal automatically', async () => {
+  it('should show match modal automatically when match is detected', async () => {
     let matchesCount = 0;
 
     mockFetch.mockImplementation((url: string) => {
@@ -140,7 +139,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -163,16 +162,10 @@ describe('Match Notification Flow', () => {
       );
     });
 
-    // Matches count should update
+    // Match modal should appear automatically
     await waitFor(() => {
-      expect(screen.getByText('1 match')).toBeInTheDocument();
+      expect(screen.getByText("It's a match!")).toBeInTheDocument();
     });
-
-    // BUT: Match modal should NOT be visible (this demonstrates the issue)
-    // The user has to manually notice the "1 match" text instead of
-    // getting an immediate celebration modal
-    const matchModal = screen.queryByText("It's a match!");
-    expect(matchModal).not.toBeInTheDocument();
   });
 
   /**
@@ -202,7 +195,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -219,8 +212,8 @@ describe('Match Notification Flow', () => {
       expect(screen.getByText('You found a match!')).toBeInTheDocument();
     });
 
-    // Match is shown in summary
-    expect(screen.getByText('Inception')).toBeInTheDocument();
+    // Match is shown in summary (may also appear in the match modal)
+    expect(screen.getAllByText('Inception').length).toBeGreaterThan(0);
 
     // But during the swiping (before finishing), the match modal
     // did not automatically appear - this is the bug
