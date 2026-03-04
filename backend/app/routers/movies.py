@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from typing import List
 
@@ -9,7 +8,13 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Movie, Room, Vote
 from ..schemas import MovieResponse
-from ..services.tmdb import TMDB_API_KEY, discover_movies, get_image_url, get_movie_details, get_trailer_key
+from ..services.tmdb import (
+    TMDB_API_KEY,
+    discover_movies,
+    get_image_url,
+    get_movie_details,
+    get_trailer_key,
+)
 
 router = APIRouter()
 
