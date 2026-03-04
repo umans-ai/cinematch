@@ -9,7 +9,7 @@ Manage incremental delivery items following project conventions (docs/backlog/to
 
 ## Commands
 
-### `/backlog new <name> [description]`
+### `/backlog new <name> [description] [--ui]`
 
 Create a new backlog item in `docs/backlog/todo/`:
 
@@ -34,11 +34,24 @@ Create a new backlog item in `docs/backlog/todo/`:
 
    ## Notes
    ```
-3. **Commit to main**:
+3. **UI flag (`--ui`)**: If present, add to template:
+   - `## UI Scenarios` section with:
+     ```markdown
+     ## UI Scenarios
+
+     Location: `docs/backlog/ui-previews/{ID}-{name}/`
+
+     | # | Scenario | Screenshot | Status |
+     |---|----------|------------|--------|
+     | 1 | [describe view state] | ⬜ | ⬜ |
+     | 2 | [describe interaction state] | ⬜ | ⬜ |
+     ```
+   - Create empty folder: `docs/backlog/ui-previews/{ID}-{name}/`
+4. **Commit to main**:
    - Must be on `main` branch with clean working directory
    - `git add . && git commit -m "chore: add {name} 📋"`
    - `git push origin main` (team visibility)
-4. **Remind**: "Remember: Shippable, Valuable, Testable, Simple, Validating ✓"
+5. **Remind**: "Remember: Shippable, Valuable, Testable, Simple, Validating ✓"
 
 **Errors**:
 - Not on main → "Error: Must be on main. Current: {branch}. Run: git checkout main"
@@ -77,12 +90,18 @@ Complete an in-progress item. **Use AFTER verification, BEFORE merge**:
 1. PR created, pipeline passed, preview tested
 2. User runs `/backlog done` from feature branch
 3. Auto-detect item from `in-progress/` or use `id-or-name`
-4. Switch to main, pull latest
-5. Move: `git mv in-progress/{file} done/{file}`
-6. Commit: `git commit -m "chore: complete {name} ✅"`
-7. Push: `git push origin main`
-8. Return to branch: `git checkout {branch}`
-9. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
+4. **UI validation** (if `## UI Scenarios` section exists):
+   - Parse scenarios table from item markdown
+   - Verify folder `docs/backlog/ui-previews/{ID}-{name}/` exists
+   - For each scenario with status ⬜, check screenshot file exists:
+     - Expected: `docs/backlog/ui-previews/{ID}-{name}/{NN}-{scenario-name}.png`
+   - **Error if mismatch**: "Error: UI scenarios incomplete. Missing: 03-filter-dropdown.png. Run agent-browser to capture."
+5. Switch to main, pull latest
+6. Move: `git mv in-progress/{file} done/{file}`
+7. Commit: `git commit -m "chore: complete {name} ✅"`
+8. Push: `git push origin main`
+9. Return to branch: `git checkout {branch}`
+10. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
 
 **Direct push workflow (docs/chores):**
 1. User on main branch
@@ -92,12 +111,13 @@ Complete an in-progress item. **Use AFTER verification, BEFORE merge**:
 
 **With continuous retro** (`--retro` flag, optional):
 - Prompts: "What was harder?" / "What to improve?"
-- Creates `docs/backlog/todo/XXXXX-retro-{topic}.md` if answers provided
+- Creates `docs/backlog/todo/{ID}-retro-{topic}.md` if answers provided
 
 **Errors**:
 - Multiple items in progress without id → "Error: Multiple items. Use: /backlog done <id-or-name>"
 - No match → "Error: No item matching '{term}' in in-progress/."
 - Uncommitted changes → "Warning: Uncommitted changes. Commit or stash first."
+- UI scenarios incomplete → "Error: UI scenarios incomplete. Missing: {list}. Capture screenshots and update markdown."
 
 ---
 
@@ -121,6 +141,37 @@ Show backlog state:
 7. **Continuous retro** - capture learnings as improvement items (type: `retro`)
 
 ---
+
+## UI Workflow (with `--ui` flag)
+
+For items involving user interface changes, use `--ui` flag on `/backlog new`:
+
+### Convention
+- **Folder naming**: `docs/backlog/ui-previews/{ID}-{name}/`
+- **Screenshot naming**: `{NN}-{scenario-name}.png` (01-, 02-, etc.)
+- **Markdown embed**: `![Scenario description](./ui-previews/{ID}-{name}/01-scenario.png)`
+
+### Example workflow
+
+```bash
+# 1. Create UI item
+/backlog new filter-ui "Add genre filter to movie list" --ui
+
+# 2. During implementation, capture screenshots
+# Place in docs/backlog/ui-previews/00009-filter-ui/
+# Name: 01-landing-no-filter.png, 02-dropdown-open.png, etc.
+
+# 3. Update item markdown with embeds
+# Change ⬜ to ✅ in status column
+
+# 4. Complete validates screenshots exist
+/backlog done
+```
+
+### Validation rules
+- Screenshots must exist for all scenarios marked ✅
+- Folder name must match item filename (minus .md)
+- Screenshot numbering must be sequential (no gaps)
 
 ## Backlog Item Types
 
