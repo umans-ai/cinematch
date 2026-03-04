@@ -9,6 +9,34 @@ Swipe-based movie picker for couples. Stop scrolling, start watching.
 - Each commit is a release candidate - keep main deployable
 - SQLite for MVP, PostgreSQL comes in increment 2
 
+## Terraform Layer Conventions
+
+| Layer | Lifecycle | Scope | Examples |
+|-------|-----------|-------|----------|
+| `00-foundation` | Months/years | Global/shared | ECR, Route53 zone, ACM certificate |
+| `01-service` | Hours/days | Per-environment (workspace) | VPC, ECS, ALB, RDS, IAM roles |
+
+**Rule of thumb:** If it's workspace-dependent (`terraform.workspace`), it goes in `01-service`.
+
+**Key principle (Répétabilité):** Every environment (preview, staging, production) must use identical architecture. No "shared VPC" - each workspace creates its own isolated VPC.
+
+## Documentation Update Rule
+
+Before completing any backlog item, update **all impacted documentation**:
+
+| Change Type | Docs to Update |
+|-------------|----------------|
+| Architecture changes | `docs/architecture/overview.md`, relevant ADR |
+| Database changes | `docs/architecture/overview.md`, migration ADR |
+| API changes | Backend docstrings (auto-generated) |
+| Product features | `docs/product/value-proposition.md`, `docs/product/specs/*.md` |
+| Workflow changes | `CLAUDE.md`, `docs/conventions.md` |
+
+**Checklist before `/backlog done`:**
+- [ ] Code implemented and tested
+- [ ] Architecture docs updated (if structural changes)
+- [ ] Product docs updated (if user-facing changes)
+
 ## Operational CLI Defaults
 
 - Assume `gh` and `aws` CLIs are available by default
@@ -65,17 +93,29 @@ The 5-digit number is a **stable ID**, not priority.
 
 ### Completing work
 
-1. Move item from `in-progress/` to `done/`
-2. Commit on branch
+**Automatic workflow (fluidified):**
+
+1. Ensure all impacted docs are updated (see "Documentation Update Rule")
+2. Commit on branch: `git add . && git commit -m "..."`
 3. Merge to main:
    - **Direct push** (docs, chores, single-file fixes): `git merge --ff-only <branch>`
    - **PR required** (infra, features, complex refactors): create PR, merge with **rebase**
+
+4. **Immediately after merge**, move backlog item:
+   ```bash
+   git checkout main
+   git pull origin main
+   git mv docs/backlog/in-progress/XXXXX-name.md docs/backlog/done/
+   git commit -m "chore: complete <name> ✅"
+   git push origin main
+   ```
 
 For PR-required changes, always rebase and verify before merge:
 1. `git fetch origin`
 2. `git rebase origin/main`
 3. Re-run checks/preview verification on rebased head
 4. Merge with `gh pr merge --rebase`
+5. Then run the backlog completion commands above (step 4)
 
 ### Adding backlog items
 
@@ -254,8 +294,12 @@ This repository includes shared skills in `.claude/skills/`:
 ## Key Paths
 
 - `docs/architecture/decisions/` - ADRs
+- `docs/architecture/overview.md` - system architecture (C4 diagrams)
+- `docs/product/` - product documentation (value prop, specs)
 - `docs/conventions.md` - full workflow documentation
 - `docs/backlog/` - incremental delivery roadmap
 - `backend/` - FastAPI application
 - `frontend/` - Next.js application
 - `operations/` - Terraform with workspace-based environments
+- `operations/00-foundation/` - shared infrastructure (ECR, Route53, ACM)
+- `operations/01-service/` - per-environment infrastructure (VPC, ECS, RDS)

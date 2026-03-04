@@ -71,26 +71,24 @@ Move item from `todo/` to `in-progress/`:
 
 ### `/backlog done [id-or-name]`
 
-Complete an in-progress item:
+Complete an in-progress item. Use after merge to main (fluidified workflow):
 
-**If on main branch** (direct push workflow):
-1. `id-or-name` required (error if missing)
-2. Resolve item in `in-progress/`
-3. `git mv in-progress/{file} done/{file}`
-4. `git commit -m "chore: complete {name} ✅"`
-5. `git push origin main`
+**Standard flow (after PR merge):**
+1. User runs `/backlog done` from main branch
+2. Auto-detect item from `in-progress/` (if single item) or use `id-or-name`
+3. Move: `git mv in-progress/{file} done/{file}`
+4. Commit: `git commit -m "chore: complete {name} ✅"`
+5. Push: `git push origin main`
+6. Confirm: "✅ Item completed and pushed to main"
 
-**If on feature branch**:
-1. Auto-detect from branch name if `id-or-name` not provided
-2. Verify clean working state
-3. `git mv in-progress/{file} done/{file}`
-4. `git commit -m "chore: complete {name} ✅"`
-5. Prompt: "Ready for PR: gh pr create --title '{name}' ..."
+**Direct push workflow (no PR):**
+1. `id-or-name` required on main branch
+2. Same steps 3-6 above
 
 **Errors**:
-- On main without id → "Error: On main branch, id-or-name required."
+- On main without id and multiple items → "Error: Multiple items in progress. Use: /backlog done <id-or-name>"
 - No match → "Error: No item matching '{term}' in in-progress/."
-- Uncommitted changes → "Warning: Uncommitted changes. Commit first."
+- Uncommitted changes → "Warning: Uncommitted changes. Commit or stash first."
 
 ---
 
@@ -109,3 +107,5 @@ Show backlog state:
 2. **Direct push default** - stay on main, no branch needed
 3. **Branches only for preview env** - use `--with-branch` for infra/arch changes needing validation
 4. **Ship criteria is a statement** - what must be true, not a checklist of constraints
+5. **Fluid completion** - no blocking questions; merge then `/backlog done` immediately after
+6. **Docs with code** - update all impacted documentation before completing item
