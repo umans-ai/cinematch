@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info, Star, Play } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
 
 interface Movie {
   id: number;
@@ -48,6 +48,9 @@ export default function RoomPage() {
   const [previousMatchIds, setPreviousMatchIds] = useState<Set<number>>(new Set());
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -57,6 +60,24 @@ export default function RoomPage() {
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
+    }
+  }, [code]);
+
+  const fetchMoreMovies = useCallback(async () => {
+    setIsFetchingMore(true);
+    try {
+      // Fetch next batch of movies
+      const response = await fetch(`/api/v1/movies?code=${code}&refresh=true`);
+      const data = await response.json();
+      if (data.length > 0) {
+        setMovies(data);
+        setCurrentIndex(0);
+        setFinished(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch more movies:", error);
+    } finally {
+      setIsFetchingMore(false);
     }
   }, [code]);
 
@@ -193,6 +214,25 @@ export default function RoomPage() {
               ))}
             </div>
           )}
+
+          {/* Swipe Again Button */}
+          <button
+            onClick={fetchMoreMovies}
+            disabled={isFetchingMore}
+            className="w-full h-12 px-4 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isFetchingMore ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span>Loading movies...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span>Swipe again</span>
+              </>
+            )}
+          </button>
 
           <button
             onClick={() => (window.location.href = "/")}
