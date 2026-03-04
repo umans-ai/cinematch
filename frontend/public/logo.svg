@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c41e3a"/>
+      <stop offset="50%" stop-color="#e85d75"/>
+      <stop offset="100%" stop-color="#f4a261"/>
+    </linearGradient>
+    <linearGradient id="f" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#e85d75"/>
+      <stop offset="100%" stop-color="#f4d03f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Film strip (curved) -->
+  <path d="M45 85 Q25 60 35 35 Q45 15 70 20 L65 30 Q50 28 45 40 Q38 58 52 78 Z" fill="url(#g)"/>
+
+  <!-- Film holes -->
+  <rect x="32" y="32" width="4" height="4" fill="white"/>
+  <rect x="36" y="44" width="4" height="4" fill="white"/>
+  <rect x="42" y="56" width="4" height="4" fill="white"/>
+  <rect x="48" y="68" width="4" height="4" fill="white"/>
+
+  <!-- Clapperboard -->
+  <path d="M75 25 L115 35 L110 48 L70 38 Z" fill="url(#g)"/>
+  <path d="M70 42 L112 52 L105 82 Q103 85 98 84 L68 76 Q64 74 65 70 L70 42 Z" fill="url(#g)"/>
+
+  <!-- Clapper holes -->
+  <rect x="78" y="30" width="6" height="4" fill="white"/>
+  <rect x="90" y="34" width="6" height="4" fill="white"/>
+  <rect x="102" y="38" width="6" height="4" fill="white"/>
+
+  <rect x="72" y="50" width="6" height="5" fill="white"/>
+  <rect x="85" y="53" width="6" height="5" fill="white"/>
+  <rect x="98" y="56" width="6" height="5" fill="white"/>
+
+  <!-- Match -->
+  <line x1="60" y1="80" x2="95" y2="45" stroke="#5c3d2e" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Flame -->
+  <path d="M95 45 Q90 35 95 25 Q100 35 95 45" fill="url(#f)"/>
+  <path d="M93 40 Q92 32 93 28 Q94 32 93 40" fill="#fff5e6"/>
+
+  <!-- Text -->
+  <text x="100" y="112" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="22" font-weight="500" fill="url(#g)">cinematch</text>
+</svg>

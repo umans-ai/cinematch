@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c41e3a"/>
+      <stop offset="50%" stop-color="#e85d75"/>
+      <stop offset="100%" stop-color="#f4a261"/>
+    </linearGradient>
+    <linearGradient id="f" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#e85d75"/>
+      <stop offset="100%" stop-color="#f4d03f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Film strip -->
+  <path d="M18 55 Q8 38 14 22 Q20 10 35 14 L32 20 Q22 18 18 28 Q13 38 22 52 Z" fill="url(#g)"/>
+
+  <!-- Holes -->
+  <rect x="14" y="20" width="3" height="3" fill="white"/>
+  <rect x="16" y="28" width="3" height="3" fill="white"/>
+  <rect x="20" y="36" width="3" height="3" fill="white"/>
+  <rect x="24" y="44" width="3" height="3" fill="white"/>
+
+  <!-- Clapperboard -->
+  <path d="M38 12 L58 18 L56 24 L36 18 Z" fill="url(#g)"/>
+  <path d="M36 22 L58 28 L54 44 Q53 46 50 45 L36 41 Q34 40 34 38 L36 22 Z" fill="url(#g)"/>
+
+  <!-- Clapper holes -->
+  <rect x="40" y="15" width="4" height="3" fill="white"/>
+  <rect x="48" y="17" width="4" height="3" fill="white"/>
+  <rect x="38" y="27" width="4" height="3" fill="white"/>
+  <rect x="46" y="29" width="4" height="3" fill="white"/>
+
+  <!-- Match -->
+  <line x1="30" y1="52" x2="52" y2="30" stroke="#5c3d2e" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Flame -->
+  <path d="M52 30 Q49 24 52 18 Q55 24 52 30" fill="url(#f)"/>
+</svg>

@@ -63,11 +63,11 @@ export default function Home() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-foreground">
-            <Film className="w-6 h-6 text-background" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20">
+            <Film className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            CineMatch
+          <h1 className="text-3xl font-bold tracking-tight">
+            Cine<span className="text-primary">Match</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             Find a movie to watch together
@@ -86,7 +86,7 @@ export default function Home() {
               placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
+              className="w-full h-12 px-4 rounded-xl border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
             />
           </div>
 
@@ -95,14 +95,14 @@ export default function Home() {
               <button
                 onClick={createRoom}
                 disabled={!name.trim() || isCreating}
-                className="w-full h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="w-full h-12 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-primary/20"
               >
                 {isCreating ? "Creating..." : "Create room"}
               </button>
 
               <button
                 onClick={() => setShowJoin(true)}
-                className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm font-medium hover:bg-secondary transition-colors"
+                className="w-full h-12 px-4 rounded-xl border-2 border-input bg-card text-sm font-semibold hover:bg-secondary transition-all active:scale-95"
               >
                 Join room
               </button>
@@ -120,21 +120,21 @@ export default function Home() {
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                   maxLength={4}
-                  className="w-full h-11 px-4 rounded-lg border border-input bg-background text-sm text-center tracking-[0.2em] font-medium placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all"
+                  className="w-full h-12 px-4 rounded-xl border border-input bg-card text-sm text-center tracking-[0.3em] font-bold placeholder:text-muted-foreground placeholder:tracking-normal placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
               </div>
 
               <button
                 onClick={joinRoom}
                 disabled={!name.trim() || !roomCode.trim() || isJoining}
-                className="w-full h-11 px-4 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="w-full h-12 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-primary/20"
               >
                 {isJoining ? "Joining..." : "Join room"}
               </button>
 
               <button
                 onClick={() => setShowJoin(false)}
-                className="w-full h-11 px-4 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="w-full h-12 px-4 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Go back
               </button>
