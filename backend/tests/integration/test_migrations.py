@@ -62,7 +62,7 @@ class TestInitialMigration:
         assert "rooms" in inspector.get_table_names()
 
         # when
-        command.downgrade(alembic_cfg, "-1")
+        command.downgrade(alembic_cfg, "base")
 
         # then - application tables removed, alembic_version remains
         inspector = inspect(engine)
