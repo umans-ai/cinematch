@@ -5,7 +5,7 @@
 locals {
   database_url = length(aws_db_instance.cinematch) > 0 ? (
     "postgresql://${aws_db_instance.cinematch[0].username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.cinematch[0].endpoint}/${aws_db_instance.cinematch[0].db_name}"
-  ) : "sqlite:///tmp/cinematch.db"
+  ) : "sqlite:///app/data/cinematch.db"
 }
 
 # Backend Task Definition

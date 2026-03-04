@@ -2,8 +2,8 @@ FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
 WORKDIR /app
 
-# Create writable /tmp for SQLite database
-RUN mkdir -p /tmp && chmod 1777 /tmp
+# Create writable data directory for SQLite database
+RUN mkdir -p /app/data && chmod 777 /app/data
 
 # Copy dependency files first (better caching)
 COPY pyproject.toml uv.lock ./
