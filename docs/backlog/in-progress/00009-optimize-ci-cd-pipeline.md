@@ -1,76 +1,77 @@
-# Optimiser la pipeline CI/CD : pnpm + BuildKit cache
+# Optimize CI/CD Pipeline: pnpm + BuildKit Cache
 
-## Contexte
+## Problem
 
-Le build du frontend est le goulot d'étranglement de la pipeline CI/CD :
-- Build frontend : **~1m24s** (rebuild complet à chaque run)
-- Build backend : **~20s** (cache efficace, layers déjà existants)
+The frontend build is the bottleneck of our CI/CD pipeline:
+- Frontend build: **~1m24s** (full rebuild every run)
+- Backend build: **~20s** (efficient layer caching)
 
-Le frontend utilise `npm ci` et build from scratch sans cache entre les runs.
+The frontend uses `npm ci` and builds from scratch without cache between CI runs.
 
-## Motivations
+## Motivation
 
-### 1. Temps de déploiement
-Chaque PR attend ~4 minutes pour le preview. En réduisant le build frontend, on améliore le feedback loop du développement.
+### Fast, Reliable Feedback
+Every PR waits ~4 minutes for preview deployment. Faster builds mean:
+- Developers stay in flow (no context switching while waiting)
+- Quicker iteration cycles
+- Earlier detection of issues
 
-### 2. Coût
-GitHub Actions facture par minute. Moins de temps = moins de coûts.
+### Effective Development
+Slow pipelines discourage small commits and frequent pushes. Fast builds encourage:
+- Small, focused PRs
+- Continuous integration
+- Rapid experimentation
 
-### 3. Developer Experience
-Des builds rapides encouragent les petits commits et les itérations fréquentes.
+## Proposed Solution
 
-## Solution proposée
+### 1. Migrate npm to pnpm
+**Why pnpm?**
+- Shared content-addressable store (hardlinks, no file duplication)
+- More aggressive parallel installation
+- Faster lockfile parsing (`pnpm-lock.yaml` vs `package-lock.json`)
+- Drop-in replacement for npm
 
-### 1. Migration de npm vers pnpm
-**Pourquoi pnpm ?**
-- Store partagé avec hardlinks (pas de duplication de fichiers)
-- Installation parallèle plus agressive
-- Lockfile (`pnpm-lock.yaml`) plus rapide à parser que `package-lock.json`
-- Compatible avec l'écosystème npm existant
+### 2. Docker BuildKit with GitHub Actions Cache
+**Why BuildKit + GHA cache?**
+- Native GitHub Actions cache (`type=gha`) for Docker layers
+- Reuses `node_modules` and Next.js build between runs
+- Estimated gain: **~60-70 seconds** on frontend builds
 
-### 2. Cache Docker avec BuildKit
-**Pourquoi BuildKit + cache GHA ?**
-- GitHub Actions fournit un cache natif (`type=gha`) pour les layers Docker
-- Permet de réutiliser `node_modules` et le build Next.js entre les runs
-- Gain estimé : **~60-70 secondes** sur le build frontend
+### 3. Optimized `.dockerignore`
+**Why?**
+- Smaller build context sent to Docker daemon
+- Faster COPY operations in Dockerfile
+- Prevents unnecessary cache invalidation
 
-### 3. `.dockerignore` optimisé
-**Pourquoi ?**
-- Réduit la taille du contexte de build envoyé au daemon Docker
-- Accélère le COPY dans le Dockerfile
-- Évite d'invalider le cache inutilement
+## Implementation
 
-## Implémentation
+### Required Changes
 
-### Changements requis
+1. **CI/CD Workflow** (`.github/workflows/ci-cd.yml`)
+   - Add `docker/setup-buildx-action@v3`
+   - Replace docker CLI commands with `docker/build-push-action@v5`
+   - Configure `cache-from: type=gha` and `cache-to: type=gha,mode=max`
+   - Use `pnpm/action-setup` for pnpm in check job
 
-1. **Workflow CI/CD** (`.github/workflows/ci-cd.yml`)
-   - Ajouter `docker/setup-buildx-action@v3`
-   - Remplacer les commandes docker CLI par `docker/build-push-action@v5`
-   - Configurer `cache-from: type=gha` et `cache-to: type=gha,mode=max`
+2. **Frontend Dockerfile**
+   - Enable pnpm via corepack
+   - Use `pnpm install --frozen-lockfile`
 
-2. **Dockerfile frontend**
-   - Activer pnpm via corepack
-   - Utiliser `pnpm install --frozen-lockfile`
+3. **New/Modified Files**
+   - Update `frontend/.dockerignore`
+   - Remove `frontend/package-lock.json`
+   - Add `frontend/pnpm-lock.yaml`
 
-3. **Fichiers à créer/supprimer**
-   - Créer `frontend/.dockerignore`
-   - Supprimer `frontend/package-lock.json`
-   - Créer `frontend/pnpm-lock.yaml`
+## Acceptance Criteria
 
-4. **Check job**
-   - Remplacer `npm ci` par `pnpm install` avec `pnpm/action-setup`
-
-## Critères d'acceptation
-
-- [ ] Pipeline CI/CD complète en moins de 2m30s (vs 4m+ actuellement)
-- [ ] Build frontend en moins de 30s avec cache chaud
-- [ ] Build frontend en moins de 60s avec cache froid
-- [ ] Preview deployments fonctionnent toujours
-- [ ] Pas de régression sur le build backend
+- [ ] Full CI/CD pipeline completes in under 2m30s (vs 4m+ currently)
+- [ ] Frontend build under 30s with warm cache
+- [ ] Frontend build under 60s with cold cache
+- [ ] Preview deployments remain reliable
+- [ ] No regression on backend builds
 
 ## Estimation
 
-- **Complexité** : Moyenne
-- **Risque** : Faible (changements isolés à la CI/CD)
-- **Temps estimé** : 2-3 heures
+- **Complexity**: Medium
+- **Risk**: Low (isolated CI/CD changes)
+- **Estimated Time**: 2-3 hours
