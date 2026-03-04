@@ -169,6 +169,37 @@ export default function RoomPage() {
             Start over
           </button>
         </div>
+
+        {/* Match Modal - shown even on finished screen if triggered on last vote */}
+        {showMatch && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-card p-6 space-y-6 border border-input shadow-2xl">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
+                  <Heart className="w-8 h-8 text-primary fill-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">It&#39;s a match!</h2>
+                <p className="text-sm text-muted-foreground">
+                  You and your friends liked
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-input bg-background">
+                <h3 className="font-semibold">{showMatch.movie.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {showMatch.movie.year} • {showMatch.movie.genre}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowMatch(null)}
+                className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     );
   }

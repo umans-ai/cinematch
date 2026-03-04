@@ -107,17 +107,17 @@ describe('Match Notification Flow', () => {
   });
 
   /**
-   * Test that the matches count updates in the UI when a match occurs,
-   * but the modal doesn't auto-trigger.
+   * Test that the matches count updates in the UI when a match occurs
+   * AND the modal auto-triggers.
    */
-  it('should update matches count but not show modal automatically', async () => {
+  it('should update matches count and show modal automatically when match is detected', async () => {
     let matchesCount = 0;
 
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/v1/movies?code=TEST')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve([mockMovie]),
+          json: () => Promise.resolve([mockMovie, { id: 2, title: 'Interstellar', year: 2014, genre: 'Sci-Fi' }]),
         });
       }
 
@@ -140,7 +140,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -168,18 +168,17 @@ describe('Match Notification Flow', () => {
       expect(screen.getByText('1 match')).toBeInTheDocument();
     });
 
-    // BUT: Match modal should NOT be visible (this demonstrates the issue)
-    // The user has to manually notice the "1 match" text instead of
-    // getting an immediate celebration modal
-    const matchModal = screen.queryByText("It's a match!");
-    expect(matchModal).not.toBeInTheDocument();
+    // Match modal SHOULD be visible automatically (the bug is now fixed)
+    await waitFor(() => {
+      expect(screen.getByText("It's a match!")).toBeInTheDocument();
+    });
   });
 
   /**
-   * Test that after finishing all movies, the match summary is shown,
-   * but real-time match notification during swiping doesn't work.
+   * Test that after finishing all movies, the match summary is shown.
+   * The match modal also appears during swiping when a new match is detected.
    */
-  it('should show matches in summary after finishing but not during swiping', async () => {
+  it('should show match modal during swiping and match summary after finishing', async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/v1/movies?code=TEST')) {
         return Promise.resolve({
@@ -202,7 +201,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -214,15 +213,19 @@ describe('Match Notification Flow', () => {
     const likeButton = screen.getByText('Like');
     fireEvent.click(likeButton);
 
-    // Wait for "finished" screen
+    // The match modal appears immediately during swiping (bug is now fixed)
+    await waitFor(() => {
+      expect(screen.getByText("It's a match!")).toBeInTheDocument();
+    });
+
+    // Close the modal and verify finished screen shows match summary
+    fireEvent.click(screen.getByText('Continue'));
+
     await waitFor(() => {
       expect(screen.getByText('You found a match!')).toBeInTheDocument();
     });
 
-    // Match is shown in summary
+    // Match is also shown in summary
     expect(screen.getByText('Inception')).toBeInTheDocument();
-
-    // But during the swiping (before finishing), the match modal
-    // did not automatically appear - this is the bug
   });
 });
