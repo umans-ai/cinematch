@@ -29,7 +29,7 @@ If no username provided, will prompt for it. The skill handles the entire onboar
    gh issue create --title "Request access: @{username}" --body "Requesting write access to contribute to CineMatch."
    ```
 
-3. **Explain**: "J'ai créé une issue pour demander l'accès. Un mainteneur va t'ajouter bientôt. Tu recevras une invitation par email à accepter."
+3. **Explain**: "I've created an issue to request access. A maintainer will add you soon. You'll receive an email invitation to accept."
 
 ### Phase 2: Prerequisites Check
 
@@ -45,8 +45,8 @@ If no username provided, will prompt for it. The skill handles the entire onboar
 | Node.js 20+ | `node --version` | Frontend runtime - Next.js app |
 
 **For each missing tool**, explain what it does and how to install it:
-- "Docker n'est pas installé. C'est ce qui va faire tourner l'application en local. Tu peux l'installer depuis docker.com"
-- "Python 3.11+ est requis. On utilise FastAPI pour le backend. Installe-le depuis python.org"
+- "Docker is not installed. This runs the application locally. Install from docker.com"
+- "Python 3.11+ is required. We use FastAPI for the backend. Install from python.org"
 
 **Continue only when all prerequisites are present.**
 
@@ -59,7 +59,7 @@ If no username provided, will prompt for it. The skill handles the entire onboar
 # Check if installed
 gh --version
 
-# If not, explain: "gh te permet d'interagir avec GitHub depuis le terminal - créer des PRs, voir les checks, etc."
+# If not, explain: "gh lets you interact with GitHub from the terminal - create PRs, check status, etc."
 # Provide install instructions for their OS
 ```
 
@@ -68,7 +68,7 @@ gh --version
 gh auth status || gh auth login
 ```
 
-**Explain**: "L'authentification gh permet de créer des PRs et voir le status des checks sans quitter le terminal."
+**Explain**: "gh authentication lets you create PRs and check CI status without leaving the terminal."
 
 ### Phase 4: Repository Setup
 
@@ -80,7 +80,7 @@ git clone https://github.com/umans-ai/cinematch.git
 cd cinematch
 ```
 
-**Explain**: "On clone directement (pas de fork) car avec l'accès write, tes PRs auront accès aux previews AWS."
+**Explain**: "We clone directly (no fork needed) because with write access, your PRs get automatic AWS previews."
 
 ### Phase 5: Backend Setup
 
@@ -94,15 +94,15 @@ uv --version || echo "uv not installed"
 ```
 
 **If uv missing**, explain:
-> "uv est un gestionnaire de packages Python ultra-rapide écrit en Rust. On l'utilise à la place de pip."
-> "Installe-le : `curl -LsSf https://astral.sh/uv/install.sh | sh`"
+> "uv is a fast Python package manager written in Rust. We use it instead of pip."
+> "Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`"
 
 **Sync dependencies**:
 ```bash
 uv sync --group dev
 ```
 
-**Explain**: "`uv sync` lit le `uv.lock` et recrée exactement l'environnement attendu. C'est comme `npm install` mais pour Python."
+**Explain**: "`uv sync` reads `uv.lock` and recreates the exact environment. Like `npm install` but for Python."
 
 ### Phase 6: Frontend Setup
 
@@ -116,15 +116,15 @@ pnpm --version || echo "pnpm not installed"
 ```
 
 **If pnpm missing**, explain:
-> "pnpm is a fast and efficient Node.js package manager. It uses hardlinks to avoid duplicating files."
-> "Install it: `npm install -g pnpm`"
+> "pnpm is a fast Node.js package manager. It uses hardlinks to avoid duplicating files."
+> "Install: `npm install -g pnpm`"
 
 **Install dependencies**:
 ```bash
 pnpm install
 ```
 
-**Explain**: "The frontend uses Next.js. `pnpm install` reads `pnpm-lock.yaml` and recreates the exact environment. It's like `uv sync` but for the frontend."
+**Explain**: "The frontend uses Next.js. `pnpm install` reads `pnpm-lock.yaml` and recreates the exact environment. Like `uv sync` but for the frontend."
 
 ### Phase 7: Verification
 
@@ -136,14 +136,14 @@ just check
 ```
 
 **Explain what happens**:
-> "`just check` exécute tous les contrôles du projet :"
-> "- Linting (ruff pour Python, eslint pour JS)"
-> "- Type checking (ty pour Python, tsc pour TS)"
+> "`just check` runs all project checks:"
+> "- Linting (ruff for Python, eslint for JS)"
+> "- Type checking (ty for Python, tsc for TS)"
 > "- Tests (pytest)"
 
-**If checks pass**: "Parfait ! Tout est en place."
+**If checks pass**: "Perfect! Everything is set up."
 
-**If checks fail**: "Il y a des erreurs. Voyons ensemble..." (analyze and help fix)
+**If checks fail**: "There are errors. Let's look together..." (analyze and help fix)
 
 ### Phase 8: Test Local Dev
 
@@ -159,7 +159,7 @@ docker-compose up -d
 curl -s http://localhost:8000/health || echo "Backend not ready"
 ```
 
-**Explain**: "Docker Compose lance le backend (port 8000) et le frontend (port 3000). C'est le moyen le plus simple de tout faire tourner ensemble."
+**Explain**: "Docker Compose starts the backend (port 8000) and frontend (port 3000). This is the easiest way to run everything together."
 
 **Stop after verification**:
 ```bash
@@ -170,59 +170,61 @@ docker-compose down
 
 **Goal**: Give a high-level overview without overwhelming.
 
-**Product (30 secondes)**:
-> "CineMatch est un 'Tinder pour les films à deux'. Un couple swipe sur des films, et l'app trouve les matchs."
-> "Ça résout le problème : 'Qu'est-ce qu'on regarde ce soir ?'"
+**Product (30 seconds)**:
+> "CineMatch is 'Tinder for movies for couples'. A couple swipes on movies, and the app finds their matches."
+> "It solves the problem: 'What do we watch tonight?'"
 
-**Architecture (30 secondes)**:
+**Architecture (30 seconds)**:
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Next.js   │────▶│   FastAPI   │────▶│   SQLite    │
 │  (frontend) │◀────│  (backend)  │     │   (local)   │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
-> "Frontend React (Next.js) ↔ Backend API (FastAPI) ↔ Base de données (SQLite en local, PostgreSQL en prod)"
+> "React frontend (Next.js) ↔ API backend (FastAPI) ↔ Database (SQLite locally, PostgreSQL in prod)"
 
-**Workflow de contribution (30 secondes)**:
-> "Même workflow que les admins, mais **sur ta branche** (pas de push sur `main`)."
+**Contribution workflow (30 seconds)**:
+> "**Important: You cannot push to `main`**, only create branches and PRs."
+>
+> "**Your simplified workflow:**"
 > ```
-> git checkout -b 00005-ma-feature                    # Créer branche
-> git add docs/backlog/todo/00005.md                  # Créer dans todo/
-> git commit -m "chore: add ma-feature 📋"
-> git mv docs/backlog/todo/00005.md docs/backlog/in-progress/  # Déplacer vers in-progress/
-> git commit -m "chore: start ma-feature 🚀"
-> # ... développement ...
-> git mv docs/backlog/in-progress/00005.md docs/backlog/done/  # Déplacer vers done/
-> git commit -m "chore: complete ma-feature ✅"
-> git push origin 00005-ma-feature                    # Push + PR
+> git checkout -b 00005-my-feature                    # Create branch directly
+> git add docs/backlog/todo/00005.md                  # Create in todo/
+> git commit -m "chore: add my-feature 📋"
+> git mv docs/backlog/todo/00005.md docs/backlog/in-progress/  # Move to in-progress/
+> git commit -m "chore: start my-feature 🚀"
+> # ... development ...
+> git mv docs/backlog/in-progress/00005.md docs/backlog/done/  # Move to done/
+> git commit -m "chore: complete my-feature ✅"
+> git push origin 00005-my-feature                    # Push + PR
 > ```
-> "La PR déploie un preview. Review → merge → tout atterrit sur `main`."
-> "Seule différence : tu ne pushes jamais sur `main`, tout se passe sur ta branche."
+> "The PR deploys a preview. Review → merge → everything lands on `main`."
+> "Only difference: you never push to `main`, everything happens on your branch."
 
 **Key conventions to remember**:
-- **Conventional commits**: `feat:`, `fix:`, `docs:` avec emoji à la fin
-- **Just targets**: `just check`, `just dev` - jamais de commandes longues en dur
-- **Backlog-driven**: toujours un fichier dans `docs/backlog/` pour suivre le travail
+- **Conventional commits**: `feat:`, `fix:`, `docs:` with emoji at the end
+- **Just targets**: `just check`, `just dev` - never long commands inline
+- **Backlog-driven**: always a file in `docs/backlog/` to track work
 
 ### Phase 10: Deep Dive Offer
 
 **Goal**: Let them explore what interests them.
 
-> "Tu veux que je creuse un aspect en particulier ?"
+> "Want me to deep dive on any of these?"
 
 **Options**:
-1. **"Le workflow de contribution"** - Créer un item backlog, branch, PR, preview
-2. **"L'architecture backend"** - Structure FastAPI, modèles, endpoints
-3. **"L'architecture frontend"** - Next.js app router, composants, state
-4. **"Le système de preview"** - Comment AWS déploie automatiquement les PRs
-5. **"Rien, je vais explorer seul"** - Terminer ici
+1. **"The contribution workflow"** - Create a backlog item, branch, PR, preview
+2. **"Backend architecture"** - FastAPI structure, models, endpoints
+3. **"Frontend architecture"** - Next.js app router, components, state
+4. **"The preview system"** - How AWS auto-deploys PRs
+5. **"Nothing, I'll explore on my own"** - Finish here
 
 ## Pedagogical Principles
 
 1. **Explain before doing** - Always say what we're about to do and why
 2. **No confirmation spam** - Don't ask "OK to proceed?" at every step
 3. **Contextual help** - If something fails, explain what it is and how to fix it
-4. **French explanations** - Keep technical terms in English but explanations in French
+4. **English throughout** - Keep all explanations in English (consistent with project)
 5. **30-second rule** - No explanation longer than 30 seconds of reading
 
 ## Error Handling
@@ -231,7 +233,7 @@ docker-compose down
 |-----------|----------|
 | Tool not installed | Explain what it does + install link |
 | Check fails | Show error, explain likely cause, suggest fix |
-| Already set up | Skip gracefully, mention "Déjà prêt !" |
+| Already set up | Skip gracefully, mention "Already ready!" |
 | Network issues | Suggest retry, explain offline alternatives |
 
 ## Success Criteria

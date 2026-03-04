@@ -74,13 +74,17 @@ L'application est disponible sur http://localhost:3000
 
 1. **Lire les conventions** : `docs/conventions.md` et `CLAUDE.md`
 2. **Comprendre l'architecture** : `docs/architecture/overview.md`
-3. **Créer un backlog item** : `docs/backlog/todo/XXXXX-nom-feature.md`
-4. **Déplacer vers in-progress** quand tu commences :
+3. **Créer une branche** : `git checkout -b 00005-ma-feature`
+4. **Créer un backlog item** : `docs/backlog/todo/XXXXX-nom-feature.md`
+5. **Déplacer vers in-progress** sur ta branche :
    ```bash
+   git add docs/backlog/todo/00005-ma-feature.md
+   git commit -m "chore: add ma-feature 📋"
    git mv docs/backlog/todo/00005-ma-feature.md docs/backlog/in-progress/
    git commit -m "chore: start ma-feature 🚀"
-   git push origin main
    ```
+
+> 💡 **Pourquoi pas de push sur `main` ?** Les contributeurs externes ne peuvent pas pousser sur `main`. Tu fais tout sur ta branche, et tout arrive sur `main` via la PR.
 
 ### Pendant le développement
 
