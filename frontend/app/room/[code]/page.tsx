@@ -130,46 +130,76 @@ export default function RoomPage() {
 
   if (finished) {
     return (
-      <main className="min-h-screen p-6">
-        <div className="max-w-sm mx-auto pt-12 space-y-8">
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
-              <Check className="w-6 h-6" />
+      <>
+        <main className="min-h-screen p-6">
+          <div className="max-w-sm mx-auto pt-12 space-y-8">
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <Check className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {matches.length > 0 ? "You found a match!" : "No matches yet"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {matches.length > 0
+                  ? `You and your friends agreed on ${matches.length} movie${matches.length > 1 ? "s" : ""}`
+                  : "Try swiping through more movies next time"}
+              </p>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {matches.length > 0 ? "You found a match!" : "No matches yet"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {matches.length > 0
-                ? `You and your friends agreed on ${matches.length} movie${matches.length > 1 ? "s" : ""}`
-                : "Try swiping through more movies next time"}
-            </p>
+
+            {matches.length > 0 && (
+              <div className="space-y-3">
+                {matches.map((match, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-input bg-card"
+                  >
+                    <h3 className="font-medium">{match.movie.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {match.movie.year} • {match.movie.genre}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Start over
+            </button>
           </div>
+        </main>
 
-          {matches.length > 0 && (
-            <div className="space-y-3">
-              {matches.map((match, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 rounded-xl border border-input bg-card"
-                >
-                  <h3 className="font-medium">{match.movie.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {match.movie.year} • {match.movie.genre}
-                  </p>
+        {showMatch && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-card p-6 space-y-6 border border-input shadow-2xl">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20">
+                  <Heart className="w-8 h-8 text-primary fill-primary" />
                 </div>
-              ))}
+                <h2 className="text-2xl font-bold">It's a match!</h2>
+                <p className="text-sm text-muted-foreground">
+                  You and your friends liked
+                </p>
+              </div>
+              <div className="p-4 rounded-xl border border-input bg-background">
+                <h3 className="font-semibold">{showMatch.movie.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {showMatch.movie.year} • {showMatch.movie.genre}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMatch(null)}
+                className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Continue
+              </button>
             </div>
-          )}
-
-          <button
-            onClick={() => (window.location.href = "/")}
-            className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Start over
-          </button>
-        </div>
-      </main>
+          </div>
+        )}
+      </>
     );
   }
 

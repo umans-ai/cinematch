@@ -112,12 +112,13 @@ describe('Match Notification Flow', () => {
    */
   it('should update matches count and show modal automatically', async () => {
     let matchesCount = 0;
+    const secondMovie = { id: 2, title: 'Interstellar', year: 2014, genre: 'Sci-Fi', description: 'A space odyssey.', poster_url: null };
 
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/v1/movies?code=TEST')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve([mockMovie]),
+          json: () => Promise.resolve([mockMovie, secondMovie]),
         });
       }
 
@@ -140,7 +141,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -202,7 +203,7 @@ describe('Match Notification Flow', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
-    const { default: RoomPage } = await import('../page');
+    const { default: RoomPage } = await import('../room/[code]/page');
     render(<RoomPage />);
 
     // Wait for movies to load
@@ -224,7 +225,7 @@ describe('Match Notification Flow', () => {
       expect(screen.getByText('You found a match!')).toBeInTheDocument();
     });
 
-    // Match is shown in summary
-    expect(screen.getByText('Inception')).toBeInTheDocument();
+    // Match is shown in summary (may also be in modal)
+    expect(screen.getAllByText('Inception').length).toBeGreaterThan(0);
   });
 });
