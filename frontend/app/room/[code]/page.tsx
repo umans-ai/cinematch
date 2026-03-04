@@ -30,6 +30,7 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [previousMatchIds, setPreviousMatchIds] = useState<Set<number>>(new Set());
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -46,11 +47,25 @@ export default function RoomPage() {
     try {
       const response = await fetch(`/api/v1/votes/matches?code=${code}`);
       const data = await response.json();
+
+      // Detect NEW matches by comparing with previously seen match IDs
+      const currentMatchIds = new Set(data.map((m: Match) => m.movie.id));
+      const newMatches = data.filter(
+        (m: Match) => !previousMatchIds.has(m.movie.id)
+      );
+
+      // If there are new matches, show the first one immediately
+      if (newMatches.length > 0 && !finished) {
+        setShowMatch(newMatches[0]);
+      }
+
+      // Update previous match IDs for next comparison
+      setPreviousMatchIds(currentMatchIds);
       setMatches(data);
     } catch (error) {
       console.error("Failed to fetch matches:", error);
     }
-  }, [code]);
+  }, [code, previousMatchIds, finished]);
 
   useEffect(() => {
     fetchMovies();
