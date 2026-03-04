@@ -103,7 +103,8 @@ def get_movie_detail(movie_id: int, db: Session = Depends(get_db)):
         if api_key:
             try:
                 client = TMDBClient(api_key)
-                details = client.get_movie_details(movie.tmdb_id)
+                tmdb_id: int = movie.tmdb_id  # type: ignore[assignment]
+                details = client.get_movie_details(tmdb_id)
                 movie.trailer_key = details.get("trailer_key")
                 if details.get("genre") and not movie.genre:
                     movie.genre = details["genre"]
