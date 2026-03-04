@@ -34,10 +34,13 @@ class ParticipantResponse(BaseModel):
 class MovieResponse(BaseModel):
     id: int
     title: str
-    year: Optional[int]
-    genre: Optional[str]
-    poster_url: Optional[str]
-    description: Optional[str]
+    year: Optional[int] = None
+    genre: Optional[str] = None
+    poster_url: Optional[str] = None
+    backdrop_url: Optional[str] = None
+    description: Optional[str] = None
+    rating: Optional[float] = None  # TMDB vote_average
+    trailer_key: Optional[str] = None  # YouTube trailer key
 
     class Config:
         from_attributes = True
