@@ -65,7 +65,7 @@ flowchart TB
     subgraph CineMatch ["CineMatch System"]
         FE["🖥️ Frontend<br/><i>[Container: Next.js]</i><br/>Serves UI<br/>Handles swipes"]
         BE["⚡ Backend API<br/><i>[Container: FastAPI]</i><br/>Room management<br/>Vote matching"]
-        DB[("🗄️ Database<br/><i>[Container: SQLite]</i><br/>Rooms, movies, votes")]
+        DB[("🗄️ Database<br/><i>[Container: PostgreSQL]</i><br/>Rooms, movies, votes")]
     end
 
     P1 -->|"HTTPS<br/>Create/join room"| FE
@@ -89,7 +89,7 @@ flowchart TB
 |-----------|------------|----------------|
 | **Frontend** | Next.js 14 + shadcn/ui | Serves the swipe UI, handles room creation/joining, displays matches |
 | **Backend API** | FastAPI + SQLAlchemy | Manages rooms, participants, movies, votes; calculates matches |
-| **Database** | SQLite (MVP) | Stores rooms, movies, votes, participants |
+| **Database** | PostgreSQL (production), SQLite (dev/test) | Stores rooms, movies, votes, participants |
 
 ## Component Diagram (C4 Level 3) - Backend
 
@@ -109,7 +109,7 @@ flowchart TB
             M4["Vote<br/>id, room_id, participant_id, movie_id, liked"]
         end
 
-        DB[("SQLite Database")]
+        DB[("PostgreSQL Database")]
     end
 
     R1 --> M1
@@ -140,7 +140,7 @@ sequenceDiagram
     actor P2 as Partner 2
     participant FE as Frontend
     participant BE as Backend
-    participant DB as SQLite
+    participant DB as PostgreSQL
 
     Note over P1,P2: Room Creation
     P1->>FE: Click "Create Room"
@@ -189,9 +189,13 @@ flowchart TB
         DNS["Route 53<br/>demo.cinematch.umans.ai"]
         ALB["Application Load Balancer<br/>HTTPS → HTTP"]
 
-        subgraph ECS ["ECS Fargate Cluster"]
-            FE["Frontend Service<br/>Next.js Container"]
-            BE["Backend Service<br/>FastAPI Container"]
+        subgraph VPC ["VPC (per environment)"]
+            subgraph ECS ["ECS Fargate Cluster"]
+                FE["Frontend Service<br/>Next.js Container"]
+                BE["Backend Service<br/>FastAPI Container"]
+            end
+
+            RDS[("RDS PostgreSQL")]
         end
 
         ECR["ECR Repositories"]
@@ -202,15 +206,18 @@ flowchart TB
     ALB --> FE
     ALB --> BE
     FE -.->|Internal API| BE
+    BE -.->|SQLAlchemy| RDS
 
     ECR -.->|Pull images| FE
     ECR -.->|Pull images| BE
 
     classDef aws fill:#ff9900,stroke:#e68a00,color:#000,stroke-width:2px
     classDef container fill:#5b9bd5,stroke:#2e75b5,color:#fff,stroke-width:2px
+    classDef db fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
 
-    class DNS,ALB,ECS,ECR aws
+    class DNS,ALB,ECS,VPC,ECR aws
     class FE,BE container
+    class RDS db
 ```
 
 ### Environment Isolation
@@ -228,22 +235,23 @@ Each environment is a Terraform workspace with dedicated:
 
 ### Isolation Guarantees
 
-- ✅ Dedicated VPC (10.1.0.0/16) - completely isolated network
+- ✅ Dedicated VPC per environment - completely isolated network (unique CIDR)
 - ✅ Dedicated ECS cluster per environment
 - ✅ Dedicated ALB per environment
+- ✅ Dedicated RDS PostgreSQL per environment (previews)
 - ✅ Resource naming: all prefixed with `cinematch-*`
-- ✅ No shared resources except Route53 zone (read-only)
+- ✅ Shared resources (read-only): Route53 zone, ECR, ACM certificate
 
 ## Data Flow
 
 ```
-User → Route53 → ALB → ECS Service → Container
+User → Route53 → ALB → ECS Service → Container → RDS PostgreSQL
 ```
 
 1. DNS resolves to ALB
 2. ALB routes `/api/*` to backend (port 8000), everything else to frontend (port 3000)
 3. Frontend talks to backend via internal API calls
-4. Backend uses SQLite (ephemeral, per-container in MVP)
+4. Backend connects to RDS PostgreSQL (per-environment, isolated)
 
 ## Deployment Flow
 
@@ -273,8 +281,8 @@ User → Route53 → ALB → ECS Service → Container
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 14, shadcn/ui, Tailwind CSS |
-| Backend | FastAPI, SQLAlchemy, SQLite |
-| Infrastructure | AWS ECS Fargate, ALB, Route53 |
+| Backend | FastAPI, SQLAlchemy, PostgreSQL |
+| Infrastructure | AWS ECS Fargate, RDS, ALB, Route53, VPC per environment |
 | CI/CD | GitHub Actions, Terraform Workspaces |
 
 ## Key Decisions
@@ -285,3 +293,8 @@ See ADRs in `docs/architecture/decisions/`:
 - **ADR-003**: Preview environments with Terraform workspaces
 - **ADR-004**: Project initialization from conversation
 - **ADR-005**: Infrastructure isolation
+- **ADR-006**: UV toolchain (Python packaging)
+- **004-vpc-per-environment**: VPC per environment (répétabilité)
+- **001-integration-testing**: Integration testing with testcontainers
+- **002-migration-testing**: Database migration testing approach
+- **003-repository-pattern**: Repository pattern for data access
