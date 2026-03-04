@@ -31,6 +31,7 @@ class Participant(Base):
     room_id = Column(Integer, ForeignKey("rooms.id"))
     name = Column(String(50))
     session_id = Column(String(100))
+    clerk_user_id = Column(String(100), nullable=True)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # A user can join multiple rooms, but only once per room

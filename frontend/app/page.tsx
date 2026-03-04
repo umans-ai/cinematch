@@ -1,32 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Film } from "lucide-react";
+import { Film, History, LogIn } from "lucide-react";
+import { useAuth, useUser, SignInButton } from "@clerk/nextjs";
+import { apiFetch } from "./lib/api";
+
+interface RoomSummary {
+  code: string;
+  created_at: string;
+  is_active: boolean;
+}
 
 export default function Home() {
   const router = useRouter();
+  const { getToken, isSignedIn } = useAuth();
+  const { user } = useUser();
+
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
+  const [previousRooms, setPreviousRooms] = useState<RoomSummary[]>([]);
+
+  // Pre-fill name from Clerk user profile
+  useEffect(() => {
+    if (isSignedIn && user && !name) {
+      const displayName =
+        user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "";
+      setName(displayName);
+    }
+  }, [isSignedIn, user, name]);
+
+  // Load previous rooms when signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+    apiFetch("/api/v1/users/me/rooms", {}, getToken)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setPreviousRooms)
+      .catch(() => {});
+  }, [isSignedIn, getToken]);
 
   const createRoom = async () => {
     if (!name.trim()) return;
     setIsCreating(true);
 
     try {
-      const response = await fetch("/api/v1/rooms", {
-        method: "POST",
-      });
+      const response = await apiFetch("/api/v1/rooms", { method: "POST" });
       const data = await response.json();
 
-      await fetch(`/api/v1/rooms/${data.code}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
+      await apiFetch(
+        `/api/v1/rooms/${data.code}/join`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        },
+        getToken
+      );
 
       router.push(`/room/${data.code}`);
     } catch (error) {
@@ -40,11 +72,15 @@ export default function Home() {
     setIsJoining(true);
 
     try {
-      const response = await fetch(`/api/v1/rooms/${roomCode.trim()}/join`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
+      const response = await apiFetch(
+        `/api/v1/rooms/${roomCode.trim()}/join`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        },
+        getToken
+      );
 
       if (!response.ok) {
         throw new Error("Failed to join room");
@@ -61,7 +97,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
+        {/* Logo + auth */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/20">
             <Film className="w-8 h-8 text-primary-foreground" />
@@ -72,6 +108,25 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">
             Find a movie to watch together
           </p>
+
+          {!isSignedIn && (
+            <SignInButton mode="modal">
+              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input bg-card text-sm hover:bg-secondary transition-colors">
+                <LogIn className="w-4 h-4" />
+                Sign in to save history
+              </button>
+            </SignInButton>
+          )}
+
+          {isSignedIn && (
+            <button
+              onClick={() => router.push("/history")}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input bg-card text-sm hover:bg-secondary transition-colors"
+            >
+              <History className="w-4 h-4" />
+              View history
+            </button>
+          )}
         </div>
 
         {/* Form */}
@@ -141,6 +196,31 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Previous rooms (signed-in users) */}
+        {isSignedIn && previousRooms.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">
+              Your rooms
+            </p>
+            <div className="space-y-2">
+              {previousRooms.map((room) => (
+                <button
+                  key={room.code}
+                  onClick={() => router.push(`/room/${room.code}`)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-input bg-card hover:bg-secondary transition-colors"
+                >
+                  <span className="font-mono tracking-wider font-bold text-sm">
+                    {room.code}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {room.is_active ? "Active" : "Ended"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

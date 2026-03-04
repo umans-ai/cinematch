@@ -26,6 +26,7 @@ class ParticipantResponse(BaseModel):
     id: int
     name: str
     session_id: str
+    clerk_user_id: Optional[str] = None
 
     class Config:
         from_attributes = True

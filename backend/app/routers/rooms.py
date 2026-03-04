@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from ..auth import get_optional_user_id
 from ..database import get_db
 from ..models import Participant, Room
 from ..schemas import ParticipantCreate, ParticipantResponse, RoomResponse
@@ -55,6 +56,7 @@ def join_room(
         raise HTTPException(status_code=404, detail="Room not found")
 
     session_id = get_session_id(request)
+    clerk_user_id = get_optional_user_id(request)
 
     # Check if already joined
     existing = (
@@ -73,7 +75,12 @@ def join_room(
     if participant_count >= 2:
         raise HTTPException(status_code=400, detail="Room is full")
 
-    new_participant = Participant(room_id=room.id, name=participant.name, session_id=session_id)
+    new_participant = Participant(
+        room_id=room.id,
+        name=participant.name,
+        session_id=session_id,
+        clerk_user_id=clerk_user_id,
+    )
     db.add(new_participant)
     db.commit()
     db.refresh(new_participant)
