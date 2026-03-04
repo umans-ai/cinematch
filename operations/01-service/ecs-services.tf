@@ -38,7 +38,12 @@ resource "aws_ecs_task_definition" "backend" {
           value = "https://${local.domain}"
         }
       ]
-      secrets = []
+      secrets = [
+        {
+          name      = "TMDB_API_KEY"
+          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:cinematch/tmdb-api-key"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
