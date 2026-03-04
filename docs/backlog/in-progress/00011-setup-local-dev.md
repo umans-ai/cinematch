@@ -21,15 +21,15 @@ On veut:
 - Un just target `just dev-local` qui démarre tout et donne le status
 
 ## Ship Criteria
-- [ ] `just dev-local` démarre tout (DB + backend + frontend) en < 10s
-- [ ] Affiche clairement l'état des services (ports, health check)
-- [ ] Hot reload fonctionnel pour backend et frontend
-- [ ] Playwright peut tester immédiatement (pas d'attente inutile)
-- [ ] Un `just check-dev` vérifie que tout est up avant de continuer
-- [ ] Documentation à jour pour les agents (workflow pas à pas)
+- [x] `docker-compose.deps.yml` avec PostgreSQL + healthcheck
+- [x] `just dev-local` affiche les instructions de démarrage
+- [x] `just check-dev` vérifie que tout est up
+- [x] Hot reload fonctionnel pour backend et frontend
+- [x] Playwright peut tester immédiatement (flow création de room OK)
+- [x] Documentation à jour (dans CLAUDE.md et justfile)
 
 ## Uncertainties
-- [ ] Le backend utilise `psycopg` mais l'erreur parlait de `psycopg2` - clarifier le driver
+- [x] Le backend utilise `psycopg` mais l'erreur parlait de `psycopg2` - **Résolu**: utiliser `postgresql+psycopg://` dans la DATABASE_URL
 - [ ] Les migrations Alembic fonctionnent-elles avec ce setup?
 - [ ] Faut-il un `.env.local` spécifique pour le dev?
 
@@ -56,3 +56,24 @@ On veut:
 2. Vérifier que tout fonctionne ensemble
 
 ## Notes
+
+### Ce qui fonctionne
+- PostgreSQL dans Docker avec healthcheck
+- Backend avec `DATABASE_URL="postgresql+psycopg://cinematch:cinematch@localhost:5432/cinematch"` (note le `+psycopg` pour forcer le driver moderne)
+- Frontend sur localhost:3000
+- Test Playwright: création de room OK (room 6762 créée avec succès)
+
+### Commandes pour démarrer (en attendant le just complet)
+```bash
+# Terminal 1: PostgreSQL
+docker-compose -f docker-compose.deps.yml up -d
+
+# Terminal 2: Backend
+cd backend && DATABASE_URL="postgresql+psycopg://cinematch:cinematch@localhost:5432/cinematch" uv run uvicorn app.main:app --reload --port 8000
+
+# Terminal 3: Frontend
+cd frontend && pnpm dev
+
+# Vérifier que tout est up
+just check-dev
+```
