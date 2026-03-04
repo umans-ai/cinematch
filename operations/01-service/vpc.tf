@@ -6,7 +6,8 @@ locals {
   use_foundation_vpc = terraform.workspace == "production"
 
   # For previews: generate unique network offset to avoid CIDR conflicts
-  network_offset = local.use_foundation_vpc ? 1 : random_id.network_offset[0].dec + 10
+  # random_id gives 0-255, we add 10 but must stay <= 255 for valid IP octet
+  network_offset = local.use_foundation_vpc ? 1 : (random_id.network_offset[0].dec % 246) + 10
 }
 
 # Data source for foundation VPC (used by production)
