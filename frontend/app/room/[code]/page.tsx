@@ -30,13 +30,15 @@ interface Match {
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
-function posterUrl(movie: Movie): string | null {
+function posterUrl(movie: Movie | null | undefined): string | null {
+  if (!movie) return null;
   if (movie.poster_path) return `${TMDB_IMAGE_BASE}/w500${movie.poster_path}`;
   if (movie.poster_url) return movie.poster_url;
   return null;
 }
 
-function backdropUrl(movie: Movie): string | null {
+function backdropUrl(movie: Movie | null | undefined): string | null {
+  if (!movie) return null;
   if (movie.backdrop_path) return `${TMDB_IMAGE_BASE}/w780${movie.backdrop_path}`;
   if (movie.poster_url) return movie.poster_url;
   return null;
@@ -248,6 +250,7 @@ export default function RoomPage() {
   }
 
   const currentMovie = movies[currentIndex];
+  if (!currentMovie) return null;
   const progress = ((currentIndex + 1) / movies.length) * 100;
   const poster = posterUrl(currentMovie);
 
