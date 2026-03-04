@@ -73,7 +73,13 @@ def join_room(
     if participant_count >= 2:
         raise HTTPException(status_code=400, detail="Room is full")
 
-    new_participant = Participant(room_id=room.id, name=participant.name, session_id=session_id)
+    # Get user_id from cookie if authenticated
+    user_id_str = request.cookies.get("user_id")
+    user_id = int(user_id_str) if user_id_str else None
+
+    new_participant = Participant(
+        room_id=room.id, name=participant.name, session_id=session_id, user_id=user_id
+    )
     db.add(new_participant)
     db.commit()
     db.refresh(new_participant)

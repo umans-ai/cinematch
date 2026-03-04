@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import init_db
-from .routers import movies, rooms, votes
+from .routers import auth, movies, rooms, votes
 
 
 @asynccontextmanager
@@ -23,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(rooms.router, prefix="/api/v1/rooms", tags=["rooms"])
 app.include_router(movies.router, prefix="/api/v1/movies", tags=["movies"])
 app.include_router(votes.router, prefix="/api/v1/votes", tags=["votes"])
