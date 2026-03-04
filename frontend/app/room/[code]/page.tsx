@@ -50,8 +50,6 @@ export default function RoomPage() {
   const [imageError, setImageError] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-
   const fetchMovies = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/movies?code=${code}`);

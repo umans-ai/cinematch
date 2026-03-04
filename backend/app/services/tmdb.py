@@ -72,13 +72,12 @@ def _make_request(endpoint: str, params: dict | None = None) -> dict:
         raise ValueError("TMDB_API_KEY environment variable is not set")
 
     url = f"{TMDB_BASE_URL}{endpoint}"
-    headers = {
-        "Authorization": f"Bearer {TMDB_API_KEY}",
-        "accept": "application/json",
-    }
+    # Use API key as query parameter (TMDB supports this for API keys)
+    request_params = params or {}
+    request_params["api_key"] = TMDB_API_KEY
 
     with httpx.Client() as client:
-        response = client.get(url, headers=headers, params=params or {}, timeout=30.0)
+        response = client.get(url, params=request_params, timeout=30.0)
         response.raise_for_status()
         return response.json()
 
