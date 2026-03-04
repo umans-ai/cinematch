@@ -287,6 +287,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "python-multipart" },
@@ -309,6 +310,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = "==1.15.2" },
     { name = "fastapi", specifier = "==0.115.12" },
+    { name = "httpx", specifier = ">=0.27.2" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.2.6" },
     { name = "pydantic", specifier = "==2.11.1" },
     { name = "python-multipart", specifier = "==0.0.22" },
