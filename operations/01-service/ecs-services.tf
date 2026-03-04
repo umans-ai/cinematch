@@ -41,7 +41,7 @@ resource "aws_ecs_task_definition" "backend" {
       secrets = [
         {
           name      = "TMDB_API_KEY"
-          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:cinematch/tmdb-api-key"
+          valueFrom = data.aws_secretsmanager_secret.tmdb_api_key.arn
         }
       ]
       logConfiguration = {
