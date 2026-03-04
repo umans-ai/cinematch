@@ -47,7 +47,7 @@ describe('Match Notification Flow', () => {
   it('should show match modal immediately when backend returns a match', async () => {
     // Setup: Mock movies endpoint
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/v1/movies?code=TEST')) {
+      if (url.includes('/api/v1/movies/discover')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockMovie]),
@@ -114,7 +114,7 @@ describe('Match Notification Flow', () => {
     let matchesCount = 0;
 
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/v1/movies?code=TEST')) {
+      if (url.includes('/api/v1/movies/discover')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockMovie]),
@@ -181,7 +181,7 @@ describe('Match Notification Flow', () => {
    */
   it('should show matches in summary after finishing but not during swiping', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/api/v1/movies?code=TEST')) {
+      if (url.includes('/api/v1/movies/discover')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockMovie]), // Only 1 movie
