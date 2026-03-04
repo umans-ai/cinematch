@@ -17,13 +17,12 @@ Current implementation uses a hardcoded static list of 4 movies. Users need vari
 
 Location: `docs/backlog/ui-previews/00003-tmdb-integration/`
 
-| # | Scenario | Status |
-|---|----------|--------|
-| 1 | Movie card with poster + IMDB rating badge | ✅ |
-| 2 | Detail modal with backdrop and trailer button | ✅ |
-| 3 | Loading state while fetching movies | ✅ |
-| 4 | Empty state - need more movies | ✅ |
-| 5 | Swipe again - fetch new batch | ✅ |
+| # | Scenario | Screenshot | Status |
+|---|----------|------------|--------|
+| 1 | Landing page | ![Landing](../ui-previews/00003-tmdb-integration/01-landing-page.png) | ✅ |
+| 2 | Movie card with poster + IMDB rating badge | ![Movie Card](../ui-previews/00003-tmdb-integration/02-movie-card.png) | ✅ |
+| 3 | Detail modal with backdrop and trailer button | ![Detail Modal](../ui-previews/00003-tmdb-integration/03-detail-modal.png) | ✅ |
+| 4 | Loading state while fetching movies | ![Loading](../ui-previews/00003-tmdb-integration/04-loading-state.png) | ✅ |
 
 ## Implementation Plan
 
