@@ -179,6 +179,42 @@ The order matters for fast feedback:
 
 Always run `just check` before committing.
 
+## Git Hooks
+
+Pre-commit hooks enforce code quality automatically. Install once per clone:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+### Hooks Installed
+
+| Hook | Runs | When |
+|------|------|------|
+| `pre-commit` | `just check` (lint + typecheck + tests) | Before each commit |
+| `pre-push` | `just check` (safety net) | Before each push |
+
+### Bypassing Hooks
+
+Not recommended, but available for WIP commits:
+
+```bash
+git commit --no-verify   # Skip pre-commit
+git push --no-verify     # Skip pre-push
+```
+
+### How It Works
+
+- Hooks stored in `.githooks/` (versioned with repo)
+- Git configured via `git config core.hooksPath .githooks`
+- Executable bash scripts that call `just check`
+
+### Benefits
+
+- Catch issues before committing (faster feedback than CI)
+- Keep main deployable (every commit passes checks)
+- Consistent with CI (both run `just check`)
+
 ## Architecture Decision Records
 
 ADRs live in `docs/architecture/decisions/` with sequential numbering: `NNN-title.md`

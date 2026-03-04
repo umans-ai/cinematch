@@ -23,6 +23,25 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Policy to access Secrets Manager for TMDB API key
+resource "aws_iam_role_policy" "ecs_execution_secrets" {
+  name = "cinematch-ecs-exec-secrets-${terraform.workspace}"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = data.aws_secretsmanager_secret.tmdb_api_key.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "ecs_task" {
   name = "cinematch-ecs-task-${terraform.workspace}"
 
