@@ -6,9 +6,9 @@ dev-local:
     echo ""
 
     # Start PostgreSQL if not running
-    if ! docker-compose -f docker-compose.deps.yml ps | grep -q "Up"; then
+    if ! docker compose -f docker-compose.deps.yml ps | grep -q "Up"; then
         echo "📦 Starting PostgreSQL..."
-        docker-compose -f docker-compose.deps.yml up -d
+        docker compose -f docker-compose.deps.yml up -d
         sleep 2
     else
         echo "✅ PostgreSQL already running"
@@ -24,7 +24,7 @@ dev-local:
 
     # Start backend in background
     echo "🐍 Starting backend..."
-    cd backend && DATABASE_URL="postgresql+psycopg://cinematch:cinematch@localhost:5432/cinematch" uv run uvicorn app.main:app --reload --port 8000 > /tmp/cinematch-backend.log 2>&1 &
+    cd backend && DATABASE_URL="postgresql+psycopg://cinematch:cinematch@127.0.0.1:5432/cinematch" uv run uvicorn app.main:app --reload --port 8000 > /tmp/cinematch-backend.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > /tmp/cinematch-backend.pid
 
@@ -73,7 +73,7 @@ dev-local-stop:
         rm /tmp/cinematch-frontend.pid
         echo "🛑 Frontend stopped"
     fi
-    docker-compose -f docker-compose.deps.yml down
+    docker compose -f docker-compose.deps.yml down
     echo "🛑 PostgreSQL stopped"
 
 # Check if dev services are ready
@@ -113,17 +113,17 @@ check-dev:
 
 # Stop local dev services
 dev-local-down:
-    docker-compose -f docker-compose.deps.yml down
+    docker compose -f docker-compose.deps.yml down
 
 # Legacy docker-based dev (slower, full containerization)
 dev-docker:
-    docker-compose up --build
+    docker compose up --build
 
 dev-docker-down:
-    docker-compose down
+    docker compose down
 
 dev-logs:
-    docker-compose -f docker-compose.deps.yml logs -f
+    docker compose -f docker-compose.deps.yml logs -f
 
 check:
     cd backend && just check
@@ -133,7 +133,7 @@ test:
     cd backend && just test
 
 docker-build:
-    docker-compose build
+    docker compose build
 
 # Backend shortcuts
 backend-dev:
