@@ -1,5 +1,8 @@
 # Data Sources
 
+# Current AWS account
+data "aws_caller_identity" "current" {}
+
 # Reference to foundation layer outputs (ECR, Route53, ACM only)
 data "terraform_remote_state" "foundation" {
   backend = "s3"
