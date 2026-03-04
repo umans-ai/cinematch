@@ -1,0 +1,46 @@
+name: Destroy Preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+env:
+  AWS_REGION: eu-west-1
+
+jobs:
+  destroy-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsCinematchRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Destroy preview
+        run: |
+          cd operations/01-service
+          terraform init
+
+          WORKSPACE="pr-${{ github.event.number }}"
+
+          # Check if workspace exists
+          if terraform workspace list | grep -q "$WORKSPACE"; then
+            terraform workspace select "$WORKSPACE"
+            terraform destroy -auto-approve
+            terraform workspace select production
+            terraform workspace delete "$WORKSPACE"
+            echo "Preview environment $WORKSPACE destroyed"
+          else
+            echo "Workspace $WORKSPACE does not exist, skipping"
+          fi
