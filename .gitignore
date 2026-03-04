@@ -57,3 +57,4 @@ out/
 *.db
 *.sqlite
 *.sqlite3
+.playwright-mcp/
