@@ -88,18 +88,20 @@ Complete an in-progress item. **Use AFTER verification, BEFORE merge**:
 
 **PR workflow (after preview verified):**
 1. PR created, pipeline passed, preview tested
-2. User runs `/backlog done` from feature branch
-3. Auto-detect item from `in-progress/` or use `id-or-name`
-4. **UI validation** (if `## UI Scenarios` section exists):
+2. **Verify CI status**: Run `gh pr checks` and ensure all checks pass
+   - **NEVER merge a PR with failing pipeline** - fix first, then proceed
+3. User runs `/backlog done` from feature branch
+4. Auto-detect item from `in-progress/` or use `id-or-name`
+5. **UI validation** (if `## UI Scenarios` section exists):
    - Parse scenarios table from item markdown
    - Verify folder `docs/backlog/ui-previews/{ID}-{name}/` exists
    - For each scenario with status ⬜, check screenshot file exists:
      - Expected: `docs/backlog/ui-previews/{ID}-{name}/{NN}-{scenario-name}.png`
    - **Error if mismatch**: "Error: UI scenarios incomplete. Missing: 03-filter-dropdown.png. Run agent-browser to capture."
-5. Move: `git mv in-progress/{file} done/{file}`
-6. Commit: `git commit -m "chore: complete {name} ✅"`
-7. Push: `git push origin {branch}`
-8. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
+6. Move: `git mv in-progress/{file} done/{file}`
+7. Commit: `git commit -m "chore: complete {name} ✅"`
+8. Push: `git push origin {branch}`
+9. Confirm: "✅ Item marked complete. Ready to merge with `gh pr merge --rebase`"
 
 **Direct push workflow (docs/chores only):**
 1. Must be on main branch
@@ -136,8 +138,9 @@ Show backlog state:
 3. **Branches for code changes** - Use branches for anything needing preview/validation
 4. **Ship criteria is a statement** - What must be true, not a checklist of constraints
 5. **Done before merge** - `/backlog done` captures "ready to ship", merge follows
-6. **Docs with code** - Update all impacted documentation before completing item
-7. **Continuous retro** - Capture learnings as improvement items (type: `retro`)
+6. **Never merge red pipelines** - Always verify CI passes before merging. Red pipeline = fix first, merge never
+7. **Docs with code** - Update all impacted documentation before completing item
+8. **Continuous retro** - Capture learnings as improvement items (type: `retro`)
 
 ---
 
