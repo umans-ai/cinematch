@@ -138,6 +138,19 @@ Each increment must be:
 
 Use next available 5-digit ID: `XXXXX-name.md`
 
+### Admin vs Contributor Workflow
+
+**Check your role**: Run `just check-role` to see if you're an admin or contributor.
+
+| | **Admin (Umans AI team)** | **Contributor (external)** |
+|---|---|---|
+| **Backlog creation** | On `main` branch | On feature branch |
+| **Push to main** | ✅ Yes | ❌ No (protected) |
+| **Workflow** | `git add` → commit → push to main → create branch | Create branch → `git add` → commit → push branch |
+| **Visibility** | Items visible on main immediately | Items visible after PR merge |
+
+**Both use identical git operations** (`git add`, `git mv`, `git commit`), only the branch differs.
+
 ## Architecture Decision Records
 
 ADRs live in `docs/architecture/decisions/` with sequential numbering: `NNN-title.md`

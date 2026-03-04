@@ -166,9 +166,18 @@ curl -s http://localhost:8000/health || echo "Backend not ready"
 docker-compose down
 ```
 
-### Phase 9: Project Orientation
+### Phase 9: Detect Role and Project Orientation
 
-**Goal**: Give a high-level overview without overwhelming.
+**Goal**: Determine if user is admin or contributor, then give high-level overview.
+
+**Auto-detect role**:
+```bash
+just check-role
+```
+
+**Explain based on result**:
+- If Admin: "You're an admin. Use main branch for backlog items, push to main after each step."
+- If Contributor: "You're a contributor. Cannot push to main - do everything on your feature branch."
 
 **Product (30 seconds)**:
 > "CineMatch is 'Tinder for movies for couples'. A couple swipes on movies, and the app finds their matches."
@@ -183,7 +192,7 @@ docker-compose down
 ```
 > "React frontend (Next.js) ↔ API backend (FastAPI) ↔ Database (SQLite locally, PostgreSQL in prod)"
 
-**Contribution workflow (30 seconds)**:
+**Contribution workflow (30 seconds)** - **Contributor mode**:
 > "**Important: You cannot push to `main`**, only create branches and PRs."
 >
 > "**Your simplified workflow:**"
@@ -200,6 +209,25 @@ docker-compose down
 > ```
 > "The PR deploys a preview. Review → merge → everything lands on `main`."
 > "Only difference: you never push to `main`, everything happens on your branch."
+
+**Admin workflow (alternative)** - **Admin mode**:
+> "**Admin workflow on `main` branch:**"
+> ```
+> # On main branch
+> git add docs/backlog/todo/00005.md
+> git commit -m "chore: add my-feature 📋"
+> git push origin main
+> git mv docs/backlog/todo/00005.md docs/backlog/in-progress/
+> git commit -m "chore: start my-feature 🚀"
+> git push origin main
+> git checkout -b 00005-my-feature
+> # ... development ...
+> git mv docs/backlog/in-progress/00005.md docs/backlog/done/
+> git commit -m "chore: complete my-feature ✅"
+> git push origin 00005-my-feature
+> gh pr create --title "feat: ..." --body "..."
+> ```
+> "Items are visible on main immediately; done commit travels with PR."
 
 **Key conventions to remember**:
 - **Conventional commits**: `feat:`, `fix:`, `docs:` with emoji at the end

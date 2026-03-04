@@ -9,6 +9,8 @@ Manage incremental delivery items following project conventions (docs/backlog/to
 
 ## Workflow Modes
 
+**Auto-detect your role**: Run `just check-role` to see if you're an admin or contributor.
+
 ### Admin Mode (Umans AI team)
 - Create and start items on `main` branch for team visibility
 - Push to `main` after each step
