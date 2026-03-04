@@ -80,11 +80,14 @@ def get_unvoted_movies(
 
     # Get movies this participant hasn't voted on yet
     voted_movie_ids = [
-        vote.movie_id
-        for vote in db.query(Vote).filter(Vote.participant_id == participant_id).all()
+        vote.movie_id for vote in db.query(Vote).filter(Vote.participant_id == participant_id).all()
     ]
 
-    movies = db.query(Movie).filter(~Movie.id.in_(voted_movie_ids)).all() if voted_movie_ids else db.query(Movie).all()
+    movies = (
+        db.query(Movie).filter(~Movie.id.in_(voted_movie_ids)).all()
+        if voted_movie_ids
+        else db.query(Movie).all()
+    )
     return movies
 
 

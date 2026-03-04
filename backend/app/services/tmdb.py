@@ -107,12 +107,8 @@ def sync_movies_to_db(
 
             movie.tmdb_id = tmdb_id
             movie.title = item.get("title", "")
-            movie.year = (
-                int(item["release_date"][:4]) if item.get("release_date") else None
-            )
-            movie.genre = ", ".join(
-                str(gid) for gid in item.get("genre_ids", [])
-            )
+            movie.year = int(item["release_date"][:4]) if item.get("release_date") else None
+            movie.genre = ", ".join(str(gid) for gid in item.get("genre_ids", []))
             movie.poster_path = item.get("poster_path")
             movie.backdrop_path = item.get("backdrop_path")
             movie.overview = item.get("overview")
