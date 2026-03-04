@@ -8,6 +8,7 @@ services:
     environment:
       - DATABASE_URL=sqlite:///./cinematch.db
       - CORS_ORIGINS=http://localhost:3000
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
     volumes:
       - ./data:/app/data
 
@@ -17,5 +18,6 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
