@@ -258,6 +258,27 @@ The order matters for fast feedback:
 
 Always run `just check` before committing.
 
+### Git Hooks
+
+Pre-commit hooks enforce code quality automatically:
+
+```bash
+# One-time setup
+./scripts/install-hooks.sh
+```
+
+**Hooks:**
+- **pre-commit**: Runs `just check` (lint + typecheck + tests) before each commit
+- **pre-push**: Safety net if pre-commit bypassed with `--no-verify`
+
+**Bypass (not recommended):**
+```bash
+git commit --no-verify  # Skip pre-commit hook
+git push --no-verify    # Skip pre-push hook
+```
+
+Hooks are stored in `.githooks/` (versioned) and configured with `git config core.hooksPath .githooks`.
+
 ## CI/CD Pipeline Safety
 
 **Before pushing to main:**

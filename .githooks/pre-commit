@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# Run just check (lint + typecheck + tests)
+if ! just check; then
+    echo ""
+    echo "❌ Pre-commit checks failed"
+    echo "   Fix issues above or use --no-verify to skip (not recommended)"
+    exit 1
+fi
+
+echo ""
+echo "✅ All checks passed"
