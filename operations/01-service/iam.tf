@@ -36,7 +36,7 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:cinematch/tmdb-api-key*"
+        Resource = data.aws_secretsmanager_secret.tmdb_api_key.arn
       }
     ]
   })
