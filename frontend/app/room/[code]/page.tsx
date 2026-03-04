@@ -49,7 +49,7 @@ export default function RoomPage() {
       const data = await response.json();
 
       // Detect NEW matches by comparing with previously seen match IDs
-      const currentMatchIds = new Set(data.map((m: Match) => m.movie.id));
+      const currentMatchIds = new Set<number>(data.map((m: Match) => m.movie.id));
       const newMatches = data.filter(
         (m: Match) => !previousMatchIds.has(m.movie.id)
       );
