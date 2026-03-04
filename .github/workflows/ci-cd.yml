@@ -31,11 +31,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
@@ -47,8 +42,20 @@ jobs:
       - name: Backend dependencies
         run: cd backend && uv sync --group dev
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: "latest"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: "frontend/pnpm-lock.yaml"
+
       - name: Frontend dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && pnpm install --frozen-lockfile
 
       - name: Run checks
         run: just check
@@ -95,21 +102,26 @@ jobs:
             echo "domain=demo-pr-${{ github.event.number }}.cinematch.umans.ai" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push backend
-        run: |
-          cd backend
-          docker build \
-            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-backend:${{ steps.workspace.outputs.image_tag }} \
-            .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-backend:${{ steps.workspace.outputs.image_tag }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-backend:${{ steps.workspace.outputs.image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push frontend
-        run: |
-          cd frontend
-          docker build \
-            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-frontend:${{ steps.workspace.outputs.image_tag }} \
-            .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-frontend:${{ steps.workspace.outputs.image_tag }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/cinematch-frontend:${{ steps.workspace.outputs.image_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

@@ -1,17 +1,17 @@
 dev:
-    npm run dev
+    pnpm dev
 
 build:
-    npm run build
+    pnpm build
 
 start:
-    npm start
+    pnpm start
 
 lint:
-    npm run lint
+    pnpm lint
 
 typecheck:
-    npm run typecheck
+    pnpm typecheck
 
 check: lint typecheck
 

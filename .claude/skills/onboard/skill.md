@@ -106,14 +106,25 @@ uv sync --group dev
 
 ### Phase 6: Frontend Setup
 
-**Goal**: Get Node dependencies installed.
+**Goal**: Get Node dependencies installed with pnpm.
 
 ```bash
 cd frontend
-npm install
+
+# Check pnpm
+pnpm --version || echo "pnpm not installed"
 ```
 
-**Explain**: "Le frontend utilise Next.js. `npm install` télécharge toutes les dépendances listées dans `package.json`."
+**If pnpm missing**, explain:
+> "pnpm is a fast and efficient Node.js package manager. It uses hardlinks to avoid duplicating files."
+> "Install it: `npm install -g pnpm`"
+
+**Install dependencies**:
+```bash
+pnpm install
+```
+
+**Explain**: "The frontend uses Next.js. `pnpm install` reads `pnpm-lock.yaml` and recreates the exact environment. It's like `uv sync` but for the frontend."
 
 ### Phase 7: Verification
 
