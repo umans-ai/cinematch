@@ -53,7 +53,7 @@ class TestInitialMigration:
     def test_downgrade_removes_all_tables(self, engine, alembic_cfg):
         """
         given: migrated database
-        when: run alembic downgrade -1
+        when: run alembic downgrade base
         then: all application tables are removed
         """
         # given - migrated database
@@ -62,7 +62,7 @@ class TestInitialMigration:
         assert "rooms" in inspector.get_table_names()
 
         # when
-        command.downgrade(alembic_cfg, "-1")
+        command.downgrade(alembic_cfg, "base")
 
         # then - application tables removed, alembic_version remains
         inspector = inspect(engine)
