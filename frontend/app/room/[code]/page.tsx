@@ -2,15 +2,19 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
 
 interface Movie {
   id: number;
+  tmdb_id?: number;
   title: string;
   year?: number;
   genre?: string;
   description?: string;
   poster_url?: string;
+  backdrop_url?: string;
+  rating?: number;
+  trailer_url?: string;
 }
 
 interface Match {
@@ -30,6 +34,8 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showTrailer, setShowTrailer] = useState<string | null>(null);
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -89,10 +95,52 @@ export default function RoomPage() {
     }
   };
 
+  const handleRefreshMovies = async () => {
+    setRefreshing(true);
+    try {
+      const response = await fetch(`/api/v1/movies/refresh?code=${code}`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        await fetchMovies();
+        setCurrentIndex(0);
+        setFinished(false);
+      }
+    } catch (error) {
+      console.error("Failed to refresh movies:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">Loading movies...</p>
+      <main className="min-h-screen flex flex-col">
+        {/* Header Skeleton */}
+        <header className="px-6 py-4 flex items-center justify-between border-b border-input">
+          <div className="h-6 w-24 bg-muted rounded animate-pulse" />
+          <div className="h-8 w-20 bg-muted rounded animate-pulse" />
+        </header>
+
+        {/* Progress Skeleton */}
+        <div className="px-6 py-4">
+          <div className="h-4 w-full bg-muted rounded animate-pulse" />
+        </div>
+
+        {/* Card Skeleton */}
+        <div className="flex-1 px-6 pb-4 flex items-center justify-center">
+          <div className="w-full max-w-sm">
+            <div className="aspect-[3/4] bg-muted rounded-2xl animate-pulse" />
+            <div className="mt-4 space-y-3">
+              <div className="h-6 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <div className="flex-1 h-14 bg-muted rounded-xl animate-pulse" />
+              <div className="flex-1 h-14 bg-muted rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </div>
       </main>
     );
   }
@@ -136,20 +184,57 @@ export default function RoomPage() {
               {matches.map((match, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl border border-input bg-card"
+                  className="p-3 rounded-xl border border-input bg-card flex gap-3"
                 >
-                  <h3 className="font-medium">{match.movie.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {match.movie.year} • {match.movie.genre}
-                  </p>
+                  {match.movie.poster_url ? (
+                    <img
+                      src={match.movie.poster_url}
+                      alt={match.movie.title}
+                      className="w-16 h-24 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-24 bg-muted rounded-lg flex items-center justify-center">
+                      <span className="text-2xl opacity-30">🎬</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{match.movie.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {match.movie.year} • {match.movie.genre}
+                    </p>
+                    {match.movie.rating && (
+                      <div className="flex items-center gap-1 text-yellow-400 text-sm font-bold mt-2">
+                        <Star className="w-4 h-4 fill-yellow-400" />
+                        <span>{match.movie.rating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
           <button
+            onClick={handleRefreshMovies}
+            disabled={refreshing}
+            className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+          >
+            {refreshing ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Loading...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span>Swipe again</span>
+              </>
+            )}
+          </button>
+
+          <button
             onClick={() => (window.location.href = "/")}
-            className="w-full h-11 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            className="w-full h-11 px-4 rounded-lg border border-input bg-card text-sm font-medium hover:bg-secondary transition-colors"
           >
             Start over
           </button>
@@ -223,6 +308,7 @@ export default function RoomPage() {
                   src={currentMovie.poster_url}
                   alt={currentMovie.title}
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
@@ -231,6 +317,15 @@ export default function RoomPage() {
               )}
               {/* Gradient overlay at bottom */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-card to-transparent" />
+
+              {/* IMDB Rating Badge */}
+              {currentMovie?.rating && (
+                <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-lg bg-black/80 text-yellow-400 text-sm font-bold backdrop-blur-sm">
+                  <Star className="w-4 h-4 fill-yellow-400" />
+                  <span>{currentMovie.rating.toFixed(1)}</span>
+                </div>
+              )}
+
               {/* Tap for more indicator */}
               <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-white text-xs backdrop-blur-sm">
                 <Info className="w-3 h-3" />
@@ -317,9 +412,15 @@ export default function RoomPage() {
             className="w-full max-w-md rounded-3xl bg-card border border-input shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Poster */}
+            {/* Modal Backdrop */}
             <div className="aspect-[16/9] bg-muted relative">
-              {currentMovie.poster_url ? (
+              {currentMovie.backdrop_url ? (
+                <img
+                  src={currentMovie.backdrop_url}
+                  alt={currentMovie.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : currentMovie.poster_url ? (
                 <img
                   src={currentMovie.poster_url}
                   alt={currentMovie.title}
@@ -345,9 +446,17 @@ export default function RoomPage() {
             <div className="p-6 space-y-4 -mt-12 relative">
               <div>
                 <h2 className="text-2xl font-bold">{currentMovie.title}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {currentMovie.year} • {currentMovie.genre}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-sm text-muted-foreground">
+                    {currentMovie.year} • {currentMovie.genre}
+                  </p>
+                  {currentMovie.rating && (
+                    <div className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
+                      <Star className="w-4 h-4 fill-yellow-400" />
+                      <span>{currentMovie.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin">
@@ -356,6 +465,17 @@ export default function RoomPage() {
                 </p>
               </div>
 
+              {/* Trailer Button */}
+              {currentMovie.trailer_url && (
+                <button
+                  onClick={() => setShowTrailer(currentMovie.trailer_url!)}
+                  className="w-full h-12 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  Watch Trailer
+                </button>
+              )}
+
               <button
                 onClick={() => setShowDetail(false)}
                 className="w-full h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -363,6 +483,30 @@ export default function RoomPage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trailer Modal */}
+      {showTrailer && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95"
+          onClick={() => setShowTrailer(null)}
+        >
+          <div className="w-full max-w-4xl aspect-video relative">
+            <iframe
+              src={`https://www.youtube.com/embed/${showTrailer.split("v=")[1]}?autoplay=1`}
+              title="Movie Trailer"
+              className="w-full h-full rounded-lg"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+            <button
+              onClick={() => setShowTrailer(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
           </div>
         </div>
       )}

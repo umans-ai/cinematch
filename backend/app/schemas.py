@@ -33,11 +33,15 @@ class ParticipantResponse(BaseModel):
 
 class MovieResponse(BaseModel):
     id: int
+    tmdb_id: Optional[int]
     title: str
     year: Optional[int]
     genre: Optional[str]
     poster_url: Optional[str]
+    backdrop_url: Optional[str]
     description: Optional[str]
+    rating: Optional[float]  # IMDB rating 0-10
+    trailer_url: Optional[str]
 
     class Config:
         from_attributes = True
