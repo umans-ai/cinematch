@@ -162,6 +162,33 @@ Create an ADR when making decisions that:
 
 Commit ADRs alongside implementation, not separately.
 
+## Tool Management (mise)
+
+The project uses [mise](https://mise.jdx.dev/) to manage tool versions (Python, Node, Terraform, etc.). This eliminates "works on my machine" issues and avoids cluttering global environments.
+
+### Setup
+
+```bash
+# Install mise (one-time)
+curl https://mise.run | sh
+
+# Enter project directory - tools auto-install
+cd cinematch
+
+# Verify setup
+mise doctor
+mise list
+```
+
+All required tools and versions are defined in `.mise.toml` and match CI/CD exactly.
+
+### For Agents
+
+When working with this codebase:
+1. **Assume mise is available** - Don't ask about tool installation
+2. **Tools are project-scoped** - Commands like `python`, `node`, `terraform` use mise-managed versions
+3. **No need to install tools manually** - mise handles it automatically
+
 ## Python Toolchain (UV)
 
 The backend uses the [Astral toolchain](https://astral.sh/): uv for packages, ruff for linting, ty for type checking.

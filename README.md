@@ -8,11 +8,33 @@ Two people join a room, swipe through movies, and find what they both want to wa
 
 ## Quick Start
 
+### Prerequisites
+
+**Recommended: Use [mise](https://mise.jdx.dev/) to auto-install all tools:**
+
 ```bash
-# Clone and setup
+# Install mise
+curl https://mise.run | sh
+
+# Clone and enter project directory
 git clone https://github.com/umans-ai/cinematch.git
 cd cinematch
 
+# Tools auto-install when you enter the directory
+# Verify with: mise doctor
+```
+
+**Or install manually:**
+- Python 3.11+
+- Node.js 20+
+- pnpm
+- uv (Python package manager)
+- just (task runner)
+- Terraform 1.7.0 (for infrastructure)
+
+### Running Locally
+
+```bash
 # Start backend (terminal 1)
 cd backend && just dev
 

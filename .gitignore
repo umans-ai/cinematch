@@ -27,6 +27,10 @@ htmlcov/
 *.swo
 *~
 
+# mise
+.mise/cache/
+.mise/*.lock
+
 # OS
 .DS_Store
 Thumbs.db

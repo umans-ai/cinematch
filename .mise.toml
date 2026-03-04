@@ -1,0 +1,30 @@
+# mise configuration for CineMatch
+# Automatically install project tools: https://mise.jdx.dev/
+
+[tools]
+# Backend
+python = "3.11"
+uv = "latest"
+
+# Frontend
+node = "20"
+pnpm = "latest"
+
+# Task runner
+just = "latest"
+
+# Infrastructure
+terraform = "1.7.0"
+
+# Optional but recommended for local dev
+# Uncomment if you want mise to manage these:
+# docker = "latest"
+# docker-compose = "latest"
+
+[env]
+# Environment variables available when tools are activated
+_.python.venv = { path = "backend/.venv", create = true }
+
+# Automatically activate when entering the project directory
+[settings]
+experimental = true
