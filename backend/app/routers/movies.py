@@ -139,12 +139,25 @@ def get_movies(
     code: str,
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=100),
+    refresh: bool = Query(False, description="Force fetch new movies from TMDB"),
     db: Session = Depends(get_db),
 ):
     """Get movies for a room, fetching from TMDB if needed."""
     room = db.query(Room).filter(Room.code == code).first()
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
+
+    # If refresh requested, fetch additional movies beyond current pool
+    if refresh:
+        # Count existing unvoted movies to determine which page to fetch
+        voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
+        existing_count = (
+            db.query(Movie)
+            .filter(~Movie.id.in_(voted_movie_ids))
+            .count()
+        )
+        # Fetch additional movies (next batch)
+        _ensure_movies_in_pool(db, room, count=existing_count + MIN_MOVIES_IN_POOL)
 
     # Ensure we have movies in the pool
     _ensure_movies_in_pool(db, room)
