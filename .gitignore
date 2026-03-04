@@ -45,6 +45,7 @@ build/
 node_modules/
 .next/
 out/
+*.tsbuildinfo
 
 # Terraform
 .terraform/
