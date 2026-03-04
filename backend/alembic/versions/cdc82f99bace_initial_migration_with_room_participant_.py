@@ -47,7 +47,7 @@ def upgrade() -> None:
     sa.Column('joined_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['room_id'], ['rooms.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('session_id')
+    sa.UniqueConstraint('room_id', 'session_id')
     )
     op.create_index(op.f('ix_participants_id'), 'participants', ['id'], unique=False)
     op.create_table('votes',

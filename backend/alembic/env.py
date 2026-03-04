@@ -13,10 +13,8 @@ from app import models
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the database URL from our app config if not already configured
-# (allows tests to override via Config.set_main_option)
-if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# Always use DATABASE_URL from our app config (supports both SQLite and PostgreSQL)
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

@@ -24,6 +24,18 @@ class Room(Base):
     votes = relationship("Vote", back_populates="room", cascade="all, delete-orphan")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    name = Column(String(50))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login = Column(DateTime(timezone=True), nullable=True)
+
+    participants = relationship("Participant", back_populates="user")
+
+
 class Participant(Base):
     __tablename__ = "participants"
 
@@ -31,12 +43,14 @@ class Participant(Base):
     room_id = Column(Integer, ForeignKey("rooms.id"))
     name = Column(String(50))
     session_id = Column(String(100))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # A user can join multiple rooms, but only once per room
     __table_args__ = (UniqueConstraint("room_id", "session_id"),)
 
     room = relationship("Room", back_populates="participants")
+    user = relationship("User", back_populates="participants")
 
 
 class Vote(Base):
