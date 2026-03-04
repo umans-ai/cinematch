@@ -6,9 +6,9 @@ dev-local:
     echo ""
 
     # Start PostgreSQL if not running
-    if ! docker-compose -f docker-compose.deps.yml ps | grep -q "Up"; then
+    if ! docker compose -f docker-compose.deps.yml ps | grep -q "Up"; then
         echo "📦 Starting PostgreSQL..."
-        docker-compose -f docker-compose.deps.yml up -d
+        docker compose -f docker-compose.deps.yml up -d
         sleep 2
     else
         echo "✅ PostgreSQL already running"
@@ -16,7 +16,7 @@ dev-local:
 
     # Wait for PostgreSQL to be ready
     echo "⏳ Waiting for PostgreSQL..."
-    until docker exec cinematch-postgres-1 pg_isready -U cinematch > /dev/null 2>&1; do
+    until docker exec cinematch-main-postgres-1 pg_isready -U cinematch > /dev/null 2>&1; do
         sleep 0.5
     done
     echo "✅ PostgreSQL ready"
@@ -73,7 +73,12 @@ dev-local-stop:
         rm /tmp/cinematch-frontend.pid
         echo "🛑 Frontend stopped"
     fi
-    docker-compose -f docker-compose.deps.yml down
+    FRONTEND_PIDS=$(lsof -ti :3000,:3001,:3002,:3003,:3004,:3005,:3006,:3007,:3008,:3009 2>/dev/null || true)
+    if [ -n "$FRONTEND_PIDS" ]; then
+        echo "$FRONTEND_PIDS" | xargs kill -9 2>/dev/null || true
+        echo "🛑 Frontend ports cleaned"
+    fi
+    docker compose -f docker-compose.deps.yml down
     echo "🛑 PostgreSQL stopped"
 
 # Check if dev services are ready
@@ -84,7 +89,7 @@ check-dev:
     echo ""
 
     # Check PostgreSQL (using docker exec since pg_isready may not be installed locally)
-    if docker exec cinematch-postgres-1 pg_isready -U cinematch >/dev/null 2>&1; then
+    if docker exec cinematch-main-postgres-1 pg_isready -U cinematch >/dev/null 2>&1; then
         echo "✅ PostgreSQL: localhost:5432"
     else
         echo "❌ PostgreSQL: not ready (run: just dev-local)"
@@ -113,17 +118,17 @@ check-dev:
 
 # Stop local dev services
 dev-local-down:
-    docker-compose -f docker-compose.deps.yml down
+    docker compose -f docker-compose.deps.yml down
 
 # Legacy docker-based dev (slower, full containerization)
 dev-docker:
-    docker-compose up --build
+    docker compose up --build
 
 dev-docker-down:
-    docker-compose down
+    docker compose down
 
 dev-logs:
-    docker-compose -f docker-compose.deps.yml logs -f
+    docker compose -f docker-compose.deps.yml logs -f
 
 check:
     cd backend && just check
@@ -133,7 +138,7 @@ test:
     cd backend && just test
 
 docker-build:
-    docker-compose build
+    docker compose build
 
 # Backend shortcuts
 backend-dev:

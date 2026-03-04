@@ -7,6 +7,11 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cinematch.db")
 
+# Convert postgresql:// to postgresql+psycopg:// for psycopg v3 support
+# SQLAlchemy defaults to psycopg2, but we use psycopg (v3)
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
 # Create database directory if it doesn't exist (for SQLite)
 if DATABASE_URL.startswith("sqlite"):
     # Extract path from sqlite URL (handles both /// and //// formats)

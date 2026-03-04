@@ -57,10 +57,14 @@ class Movie(Base):
     __tablename__ = "movies"
 
     id = Column(Integer, primary_key=True, index=True)
+    tmdb_id = Column(Integer, unique=True, index=True, nullable=True)  # TMDB movie ID
     title = Column(String(200), nullable=False)
     year = Column(Integer)
     genre = Column(String(100))
     poster_url = Column(String(500))
+    backdrop_url = Column(String(500))  # TMDB backdrop image
     description = Column(String(1000))
+    rating = Column(Integer)  # TMDB vote_average * 10 (stored as integer for precision)
+    trailer_key = Column(String(50))  # YouTube trailer key
 
     votes = relationship("Vote", back_populates="movie")
