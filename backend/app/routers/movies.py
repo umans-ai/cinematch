@@ -1,3 +1,6 @@
+import json
+import os
+from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,12 +9,28 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Movie, Room, Vote
 from ..schemas import MovieResponse
-from ..services.tmdb import discover_movies, get_image_url, get_movie_details, get_trailer_key
+from ..services.tmdb import TMDB_API_KEY, discover_movies, get_image_url, get_movie_details, get_trailer_key
 
 router = APIRouter()
 
 # Minimum number of movies to keep in a room's pool
 MIN_MOVIES_IN_POOL = 50
+
+# Load static movie list from JSON for fallback when TMDB is not available
+_DATA_DIR = Path(__file__).parent.parent / "data"
+_MOVIES_FILE = _DATA_DIR / "movies.json"
+
+with open(_MOVIES_FILE) as f:
+    STATIC_MOVIES: list[dict] = json.load(f)
+
+
+def _seed_static_movies(db: Session) -> None:
+    """Seed the database with static movies if empty (fallback when no TMDB)."""
+    if db.query(Movie).count() == 0:
+        for movie_data in STATIC_MOVIES:
+            movie = Movie(**movie_data)
+            db.add(movie)
+        db.commit()
 
 
 def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
@@ -89,16 +108,17 @@ def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
 
 
 def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_POOL) -> None:
-    """Ensure room has enough movies in its pool by fetching from TMDB."""
+    """Ensure room has enough movies in its pool by fetching from TMDB or using static fallback."""
     # Get count of existing movies not yet voted by any participant in this room
     voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
-    existing_count = (
-        db.query(Movie)
-        .filter(~Movie.id.in_(voted_movie_ids))
-        .count()
-    )
+    existing_count = db.query(Movie).filter(~Movie.id.in_(voted_movie_ids)).count()
 
     if existing_count >= count:
+        return
+
+    # If TMDB API key is not available, use static movies as fallback
+    if not TMDB_API_KEY:
+        _seed_static_movies(db)
         return
 
     # Need to fetch more movies
@@ -151,11 +171,7 @@ def get_movies(
     if refresh:
         # Count existing unvoted movies to determine which page to fetch
         voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
-        existing_count = (
-            db.query(Movie)
-            .filter(~Movie.id.in_(voted_movie_ids))
-            .count()
-        )
+        existing_count = db.query(Movie).filter(~Movie.id.in_(voted_movie_ids)).count()
         # Fetch additional movies (next batch)
         _ensure_movies_in_pool(db, room, count=existing_count + MIN_MOVIES_IN_POOL)
 
