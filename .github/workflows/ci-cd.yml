@@ -8,6 +8,7 @@ on:
       - 'frontend/**'
       - 'operations/**'
       - '.github/workflows/**'
+      - '!.github/workflows/auto-approve*.yml'
   pull_request:
     branches: [main]
     types: [opened, synchronize]
@@ -16,6 +17,7 @@ on:
       - 'frontend/**'
       - 'operations/**'
       - '.github/workflows/**'
+      - '!.github/workflows/auto-approve*.yml'
 
 env:
   AWS_REGION: eu-west-1
