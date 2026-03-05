@@ -35,6 +35,11 @@ git push origin feature-branch
 # → Attendre CI check
 # → Attendre approval maintainer
 # → Merge manuel
+
+# ... développement ...
+
+# Le move in-progress→done reste sur la branche
+# et part avec la PR de code (review normale)
 ```
 
 ### Contributor workflow (après implémentation)
@@ -44,8 +49,13 @@ git mv docs/backlog/todo/XXXXX-item.md docs/backlog/in-progress/
 git commit -m "chore: start XXXXX-item 🚀"
 git push origin feature-branch
 # → PR créée
-# → Auto-approval si critères respectés
-# → Auto-merge activé
+# → Auto-merge instantané (todo→in-progress uniquement)
+# Main est à jour, le contributor peut commencer !
+
+# ... développement ...
+
+# Le move in-progress→done reste sur la branche
+# et part avec la PR de code (review normale)
 ```
 
 ## Impact Analysis
@@ -55,14 +65,15 @@ git push origin feature-branch
 - **Bénéfice indirect** : Moins de PRs backlog à reviewer des contributeurs
 
 ### Workflow Contributor
-- **Réduction de friction** : Plus besoin d'attendre un maintainer pour les tâches administratives
-- **Autonomie accrue** : Le contributor contrôle son cycle backlog de bout en bout
+- **Réduction de friction** : Le move `todo→in-progress` est auto-mergé, le contributor commence immédiatement
+- **Review normale conservée** : Le move `in-progress→done` reste sur la branche et passe par review avec le code
 - **Audit trail préservé** : Les commits sont toujours signés, l'historique git est intact
 
 ### Sécurité
-- **Périmètre strict** : Uniquement `docs/backlog/**`, uniquement des renommages (0 additions, 0 deletions)
-- **Association vérifiée** : Seuls les `COLLABORATOR` (write access) peuvent bénéficier de l'auto-approval
-- **Pas de bypass de CI** : Le check `just check` doit toujours passer (même si pour du markdown il est trivial)
+- **Périmètre strict** : Uniquement les moves **VERS** `in-progress/` (pas depuis)
+- **Rename uniquement** : 0 additions, 0 deletions, 1 fichier changé
+- **Association vérifiée** : Seuls les `COLLABORATOR` (write access) peuvent bénéficier de l'auto-merge
+- **Pas de bypass de CI** : Le check `just check` doit toujours passer
 
 ## Implementation Plan
 
@@ -118,10 +129,11 @@ jobs:
 
 ## Validation Criteria
 
-- [ ] Une PR qui ne modifie qu'un fichier dans `docs/backlog/` (rename uniquement) est auto-approuvée
-- [ ] L'auto-approval ne s'applique qu'aux collaborateurs avec write access
+- [ ] Une PR qui move un fichier vers `docs/backlog/in-progress/` (rename uniquement) est auto-mergée
+- [ ] Une PR qui move un fichier depuis `docs/backlog/in-progress/` (vers done/) n'est PAS auto-mergée
+- [ ] L'auto-merge ne s'applique qu'aux collaborateurs avec write access
 - [ ] Une PR avec des changements hors `docs/backlog/` nécessite toujours une review manuelle
-- [ ] La documentation reflète le nouveau comportement
+- [ ] La documentation reflète le nouveau comportement (CLAUDE.md, MEMORY.md, CONTRIBUTING.md)
 
 ## References
 
