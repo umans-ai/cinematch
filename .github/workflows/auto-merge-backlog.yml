@@ -61,10 +61,17 @@ jobs:
           echo "should_approve=$SHOULD_APPROVE" >> "$GITHUB_OUTPUT"
           echo "Should approve: $SHOULD_APPROVE"
 
+      - name: Auto-approve PR
+        if: steps.check.outputs.should_approve == 'true'
+        uses: hmarr/auto-approve-action@v4
+        with:
+          review-message: "Auto-approved: backlog management PR"
+          github-token: ${{ secrets.ADMIN_PAT || secrets.GITHUB_TOKEN }}
+
       - name: Auto-merge PR
         if: steps.check.outputs.should_approve == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ADMIN_PAT || secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           echo "✅ Criteria met! Auto-merging backlog PR..."
