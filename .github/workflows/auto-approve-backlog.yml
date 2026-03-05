@@ -31,8 +31,8 @@ jobs:
           echo "Files changed: $FILES_CHANGED"
 
           # Get additions and deletions
-          ADDITIONS=$(gh pr view "$PR_NUMBER" --json additions)
-          DELETIONS=$(gh pr view "$PR_NUMBER" --json deletions)
+          ADDITIONS=$(gh pr view "$PR_NUMBER" --json additions --jq '.additions')
+          DELETIONS=$(gh pr view "$PR_NUMBER" --json deletions --jq '.deletions')
           echo "Additions: $ADDITIONS, Deletions: $DELETIONS"
 
           # Check if file is being moved TO in-progress/ (not FROM)
