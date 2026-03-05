@@ -35,16 +35,25 @@ jobs:
           DELETIONS=$(gh pr view "$PR_NUMBER" --json deletions)
           echo "Additions: $ADDITIONS, Deletions: $DELETIONS"
 
+          # Check if file is being moved TO in-progress/ (not FROM)
+          FILE_PATH=$(gh pr view "$PR_NUMBER" --json files --jq '.files[0].path')
+          echo "File path: $FILE_PATH"
+
           # Check author association
           AUTHOR_ASSOC="${{ github.event.pull_request.author_association }}"
           echo "Author association: $AUTHOR_ASSOC"
 
-          # Validate criteria
+          # Validate criteria:
+          # - 1 file changed
+          # - 0 additions, 0 deletions (pure rename)
+          # - file is in docs/backlog/in-progress/ (moved TO in-progress)
+          # - author is collaborator/member/owner
           SHOULD_APPROVE="false"
 
           if [[ "$FILES_CHANGED" == "1" ]] && \
              [[ "$ADDITIONS" == "0" ]] && \
              [[ "$DELETIONS" == "0" ]] && \
+             [[ "$FILE_PATH" == docs/backlog/in-progress/* ]] && \
              [[ "$AUTHOR_ASSOC" == "COLLABORATOR" || "$AUTHOR_ASSOC" == "MEMBER" || "$AUTHOR_ASSOC" == "OWNER" ]]; then
             SHOULD_APPROVE="true"
           fi
