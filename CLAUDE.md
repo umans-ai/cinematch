@@ -146,16 +146,17 @@ Use next available 5-digit ID: `XXXXX-name.md`
 |---|---|---|
 | **Backlog creation** | On `main` branch | On feature branch |
 | **Push to main** | ✅ Yes | ❌ No (protected) |
-| **Backlog PRs** | N/A (direct push) | ✅ Auto-approved if only `docs/backlog/**` rename |
+| **Start work (todo→in-progress)** | Push direct main | ✅ PR auto-mergée |
+| **Complete work (in-progress→done)** | Sur branche (avec code) | Sur branche (avec code) |
 | **Workflow** | `git add` → commit → push to main → create branch | Create branch → `git add` → commit → push branch |
 | **Visibility** | Items visible on main immediately | Items visible after PR merge |
 
 **Both use identical git operations** (`git add`, `git mv`, `git commit`), only the branch differs.
 
-**Auto-approval for backlog PRs:**
-- Only applies to PRs that rename a single file in `docs/backlog/` (0 additions, 0 deletions)
-- PR is automatically approved and merged via rebase
-- No maintainer intervention required for pure backlog management
+**Auto-merge for starting work:**
+- When a contributor moves an item from `todo/` to `in-progress/`, the PR is auto-merged
+- This allows them to update `main` without waiting for a maintainer
+- The move to `done/` stays on the branch and goes with the final code PR
 
 ## Architecture Decision Records
 
