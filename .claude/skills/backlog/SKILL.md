@@ -19,7 +19,9 @@ Manage incremental delivery items following project conventions (docs/backlog/to
 ### Contributor Mode (external contributors)
 - Create branch first (cannot push to `main`)
 - All backlog operations happen on the feature branch
-- Everything merges to `main` via PR
+- **Starting work** (todo→in-progress): Push and create PR → **auto-merged instantly** (no maintainer wait!)
+- **Completing work** (in-progress→done): Stays on branch, merges with code PR (normal review)
+- Everything else merges to `main` via PR
 
 ## Commands
 
@@ -67,8 +69,9 @@ Create a new backlog item in `docs/backlog/todo/`:
      - `git push origin main`
    - **Contributor mode** (on feature branch):
      - `git add . && git commit -m "chore: add {name} 📋"`
-     - No push (user will push with other commits)
+     - No push yet (will push with start command)
 5. **Remind**: "Remember: Shippable, Valuable, Testable, Simple, Validating ✓"
+6. **For contributors**: "Next: Use `/backlog start` to move to in-progress and trigger auto-merge"
 
 **Errors**:
 - Uncommitted changes → "Error: Uncommitted changes. Commit or stash first."
@@ -87,9 +90,13 @@ Move item from `todo/` to `in-progress/`:
 4. **Commit**: `git commit -m "chore: start {name} 🚀"`
 5. **Push based on workflow**:
    - **Admin mode** (on `main`): `git push origin main`
-   - **Contributor mode** (on feature branch): No push yet
+   - **Contributor mode** (on feature branch): Push and create PR for auto-merge
+     - `git push origin {branch}`
+     - `gh pr create --title "chore: start {name} 🚀" --body "Moving backlog item to in-progress"`
+     - PR will be auto-merged instantly (auto-approve workflow)
 6. **Branch (optional, admin mode only)**:
    - With `--with-branch`: `git checkout -b {name}`
+   - For contributors, branch already exists
 
 **Errors**:
 - Not found → "Error: No match for '{term}' in todo/. Try: /backlog status"

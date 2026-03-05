@@ -198,17 +198,22 @@ just check-role
 > "**Your simplified workflow:**"
 > ```
 > git checkout -b 00005-my-feature                    # Create branch directly
-> git add docs/backlog/todo/00005.md                  # Create in todo/
-> git commit -m "chore: add my-feature 📋"
+> echo "..." > docs/backlog/todo/00005.md             # Create in todo/
+> git add . && git commit -m "chore: add my-feature 📋"
 > git mv docs/backlog/todo/00005.md docs/backlog/in-progress/  # Move to in-progress/
 > git commit -m "chore: start my-feature 🚀"
+> git push origin 00005-my-feature                    # Push
+> gh pr create --title "chore: start my-feature 🚀" --body "..."
+> # ^^ This PR is AUTO-MERGED instantly! No maintainer wait 🎉
 > # ... development ...
 > git mv docs/backlog/in-progress/00005.md docs/backlog/done/  # Move to done/
 > git commit -m "chore: complete my-feature ✅"
-> git push origin 00005-my-feature                    # Push + PR
+> # ... code commits ...
+> git push origin 00005-my-feature                    # Final push + PR for code
 > ```
-> "The PR deploys a preview. Review → merge → everything lands on `main`."
-> "Only difference: you never push to `main`, everything happens on your branch."
+> "When you start work (todo→in-progress), the PR auto-merges instantly!"
+> "When you're done, the done commit and code go together in one reviewed PR."
+> "Only difference from admin: you never push to `main`, and starting work is instant."
 
 **Admin workflow (alternative)** - **Admin mode**:
 > "**Admin workflow on `main` branch:**"
