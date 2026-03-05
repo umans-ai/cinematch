@@ -1,0 +1,67 @@
+name: Auto-approve backlog PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/backlog/**'
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check PR criteria
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Get changed files count
+          FILES_CHANGED=$(gh pr view "$PR_NUMBER" --json files --jq '.files | length')
+          echo "Files changed: $FILES_CHANGED"
+
+          # Get additions and deletions
+          ADDITIONS=$(gh pr view "$PR_NUMBER" --json additions)
+          DELETIONS=$(gh pr view "$PR_NUMBER" --json deletions)
+          echo "Additions: $ADDITIONS, Deletions: $DELETIONS"
+
+          # Check author association
+          AUTHOR_ASSOC="${{ github.event.pull_request.author_association }}"
+          echo "Author association: $AUTHOR_ASSOC"
+
+          # Validate criteria
+          SHOULD_APPROVE="false"
+
+          if [[ "$FILES_CHANGED" == "1" ]] && \
+             [[ "$ADDITIONS" == "0" ]] && \
+             [[ "$DELETIONS" == "0" ]] && \
+             [[ "$AUTHOR_ASSOC" == "COLLABORATOR" || "$AUTHOR_ASSOC" == "MEMBER" || "$AUTHOR_ASSOC" == "OWNER" ]]; then
+            SHOULD_APPROVE="true"
+          fi
+
+          echo "should_approve=$SHOULD_APPROVE" >> "$GITHUB_OUTPUT"
+          echo "Should approve: $SHOULD_APPROVE"
+
+      - name: Auto-approve PR
+        if: steps.check.outputs.should_approve == 'true'
+        uses: hmarr/auto-approve-action@v4
+        with:
+          review-message: "Auto-approved: backlog management PR"
+
+      - name: Enable auto-merge
+        if: steps.check.outputs.should_approve == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge --auto --rebase "$PR_URL"
