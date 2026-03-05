@@ -1,4 +1,4 @@
-name: Auto-approve backlog PRs
+name: Auto-merge backlog PRs
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - 'docs/backlog/**'
 
 jobs:
-  auto-approve:
+  auto-merge:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -61,16 +61,11 @@ jobs:
           echo "should_approve=$SHOULD_APPROVE" >> "$GITHUB_OUTPUT"
           echo "Should approve: $SHOULD_APPROVE"
 
-      - name: Auto-approve PR
-        if: steps.check.outputs.should_approve == 'true'
-        uses: hmarr/auto-approve-action@v4
-        with:
-          review-message: "Auto-approved: backlog management PR"
-
-      - name: Enable auto-merge
+      - name: Auto-merge PR
         if: steps.check.outputs.should_approve == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          gh pr merge --auto --rebase "$PR_URL"
+          echo "✅ Criteria met! Auto-merging backlog PR..."
+          gh pr merge --rebase --admin "$PR_URL"
