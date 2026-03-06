@@ -54,7 +54,8 @@ class TestMatchNotification:
 
         # Get movies
         response = client.get(f"/api/v1/movies?code={room_code}")
-        movies = response.json()
+        data = response.json()
+        movies = data.get("movies", [])
 
         if not movies:
             pytest.skip("No movies available")
@@ -112,7 +113,8 @@ class TestMatchNotification:
         )
 
         response = client.get(f"/api/v1/movies?code={room_code}")
-        movies = response.json()
+        data = response.json()
+        movies = data.get("movies", [])
 
         if not movies:
             pytest.skip("No movies available")

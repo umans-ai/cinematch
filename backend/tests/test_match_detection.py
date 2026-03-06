@@ -40,7 +40,8 @@ def setup_room_with_two_users(client):
 
     # Seed some movies (they'll be fetched from TMDB or use existing)
     response = client.get(f"/api/v1/movies?code={room_code}")
-    movies = response.json()
+    data = response.json()
+    movies = data.get("movies", [])
 
     return {
         "room_code": room_code,
