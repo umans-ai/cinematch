@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import init_db
-from .routers import movies, rooms, votes
+from .routers import movies, providers, rooms, votes
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(rooms.router, prefix="/api/v1/rooms", tags=["rooms"])
 app.include_router(movies.router, prefix="/api/v1/movies", tags=["movies"])
 app.include_router(votes.router, prefix="/api/v1/votes", tags=["votes"])
+app.include_router(providers.router, prefix="/api/v1/providers", tags=["providers"])
 
 
 @app.get("/health")

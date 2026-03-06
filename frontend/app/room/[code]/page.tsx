@@ -16,6 +16,12 @@ interface Movie {
   trailer_key?: string;
 }
 
+interface RoomInfo {
+  code: string;
+  region: string;
+  provider_id: number;
+}
+
 interface Match {
   movie: Movie;
   participants: string[];
@@ -33,11 +39,22 @@ function parseGenres(genreString?: string): string[] {
   return genreString.split(",").map(g => g.trim()).filter(g => g.length > 0);
 }
 
+// Provider info lookup
+const PROVIDER_INFO: Record<number, { name: string; color: string }> = {
+  8: { name: "Netflix", color: "bg-red-600" },
+  9: { name: "Prime", color: "bg-blue-500" },
+  337: { name: "Disney+", color: "bg-blue-900" },
+  384: { name: "HBO Max", color: "bg-purple-600" },
+  350: { name: "Apple TV+", color: "bg-gray-800" },
+  15: { name: "Hulu", color: "bg-green-500" },
+};
+
 export default function RoomPage() {
   const params = useParams();
   const code = params.code as string;
 
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [room, setRoom] = useState<RoomInfo | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matches, setMatches] = useState<Match[]>([]);
   const [showMatch, setShowMatch] = useState<Match | null>(null);
@@ -54,7 +71,8 @@ export default function RoomPage() {
     try {
       const response = await fetch(`/api/v1/movies?code=${code}`);
       const data = await response.json();
-      setMovies(data);
+      setMovies(data.movies);
+      setRoom(data.room);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
@@ -67,8 +85,9 @@ export default function RoomPage() {
       // Fetch next batch of movies
       const response = await fetch(`/api/v1/movies?code=${code}&refresh=true`);
       const data = await response.json();
-      if (data.length > 0) {
-        setMovies(data);
+      if (data.movies && data.movies.length > 0) {
+        setMovies(data.movies);
+        setRoom(data.room);
         setCurrentIndex(0);
         setFinished(false);
       }
@@ -335,6 +354,15 @@ export default function RoomPage() {
                 <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-xs backdrop-blur-sm">
                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   <span className="font-semibold">{formatRating(currentMovie.rating)}</span>
+                </div>
+              )}
+
+              {/* Platform Badge */}
+              {room && PROVIDER_INFO[room.provider_id] && (
+                <div className="absolute top-3 right-3">
+                  <div className={`px-2 py-1 rounded-full ${PROVIDER_INFO[room.provider_id].color} text-white text-xs font-medium shadow-lg`}>
+                    {PROVIDER_INFO[room.provider_id].name}
+                  </div>
                 </div>
               )}
 

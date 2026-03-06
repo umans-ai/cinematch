@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 
 class RoomCreate(BaseModel):
-    pass
+    region: str = "US"
+    provider_id: int = 8
 
 
 class RoomResponse(BaseModel):
@@ -13,6 +14,8 @@ class RoomResponse(BaseModel):
     code: str
     created_at: datetime
     is_active: bool
+    region: str
+    provider_id: int
 
     class Config:
         from_attributes = True
