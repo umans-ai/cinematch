@@ -57,7 +57,8 @@ def test_match_only_counts_current_room_votes(client):
     # Get movies (seed the database)
     client.cookies.set("session_id", p1_session)
     movies_resp = client.get(f"/api/v1/movies?code={room_a_code}")
-    movies = movies_resp.json()
+    data = movies_resp.json()
+    movies = data.get("movies", [])
     movie_id = movies[0]["id"]
 
     # P1 likes the movie (Room A)
@@ -105,7 +106,8 @@ def test_match_requires_all_room_participants(client):
     # Get movies
     client.cookies.set("session_id", p1_session)
     movies_resp = client.get(f"/api/v1/movies?code={room_code}")
-    movies = movies_resp.json()
+    data = movies_resp.json()
+    movies = data.get("movies", [])
     movie_id = movies[0]["id"]
 
     # Both like the movie
@@ -150,7 +152,8 @@ def test_no_match_when_one_dislikes(client):
     # Get movies
     client.cookies.set("session_id", p1_session)
     movies_resp = client.get(f"/api/v1/movies?code={room_code}")
-    movies = movies_resp.json()
+    data = movies_resp.json()
+    movies = data.get("movies", [])
     movie_id = movies[0]["id"]
 
     # P1 likes

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Participant, Room
-from ..schemas import ParticipantCreate, ParticipantResponse, RoomResponse
+from ..schemas import ParticipantCreate, ParticipantResponse, RoomCreate, RoomResponse
 
 router = APIRouter()
 
@@ -19,10 +19,12 @@ def get_session_id(request: Request) -> str:
 
 
 @router.post("", response_model=RoomResponse)
-def create_room(db: Session = Depends(get_db)):
+def create_room(room_data: RoomCreate | None = None, db: Session = Depends(get_db)):
     max_attempts = 10
+    region = room_data.region if room_data else "US"
+    provider_id = room_data.provider_id if room_data else 8
     for _ in range(max_attempts):
-        room = Room()
+        room = Room(region=region, provider_id=provider_id)
         db.add(room)
         try:
             db.commit()

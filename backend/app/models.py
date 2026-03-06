@@ -19,6 +19,8 @@ class Room(Base):
     code = Column(String(4), unique=True, index=True, default=generate_room_code)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
+    region = Column(String(2), default="US")  # ISO 3166-1 alpha-2 country code
+    provider_id = Column(Integer, default=8)  # TMDB watch provider ID (8 = Netflix)
 
     participants = relationship("Participant", back_populates="room", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="room", cascade="all, delete-orphan")

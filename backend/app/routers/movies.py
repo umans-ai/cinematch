@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -130,10 +131,9 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
     needed = count - existing_count
     pages_needed = (needed // 20) + 1  # TMDB returns 20 per page
 
-    # Get room's region/provider preferences (default to US/Netflix for now)
-    # TODO: Read from room model once platform selection is implemented
-    region = "US"
-    provider_id = 8  # Netflix
+    # Get room's region/provider preferences
+    region: str = str(room.region)
+    provider_id: int | None = int(room.provider_id) if room.provider_id else None  # type: ignore[arg-type]
 
     fetched_count = 0
     for page in range(1, pages_needed + 1):
@@ -159,7 +159,18 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
             continue
 
 
-@router.get("", response_model=List[MovieResponse])
+class RoomInfo(BaseModel):
+    code: str
+    region: str
+    provider_id: int
+
+
+class MoviesWithRoomResponse(BaseModel):
+    movies: List[MovieResponse]
+    room: RoomInfo
+
+
+@router.get("", response_model=MoviesWithRoomResponse)
 def get_movies(
     code: str,
     page: int = Query(1, ge=1),
@@ -195,7 +206,14 @@ def get_movies(
         .all()
     )
 
-    return movies
+    return MoviesWithRoomResponse(
+        movies=[MovieResponse.model_validate(m) for m in movies],
+        room=RoomInfo(
+            code=str(room.code),
+            region=str(room.region),
+            provider_id=int(room.provider_id) if room.provider_id else 8,  # type: ignore[arg-type]
+        ),
+    )
 
 
 @router.get("/unvoted", response_model=List[MovieResponse])
