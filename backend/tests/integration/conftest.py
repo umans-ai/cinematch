@@ -6,11 +6,11 @@ Tests should follow given/when/then pattern and read like executable documentati
 """
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
-
-from app.database import Base
 
 
 @pytest.fixture(scope="function")
@@ -60,20 +60,22 @@ def engine(database_url):
 
 
 @pytest.fixture(scope="function")
-def db_session(engine):
+def db_session(engine, database_url):
     """
     Create a fresh database session for each test.
 
-    Drops and recreates all tables before each test to ensure isolation.
+    Runs Alembic migrations before each test to ensure isolation.
     """
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
+    # Run Alembic migrations
+    alembic_cfg = Config("alembic.ini")
+    alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+    command.upgrade(alembic_cfg, "head")
 
     Session = sessionmaker(bind=engine)
     session = Session()
 
     yield session
 
-    # Cleanup
+    # Cleanup - downgrade all the way
     session.close()
-    Base.metadata.drop_all(bind=engine)
+    command.downgrade(alembic_cfg, "base")
