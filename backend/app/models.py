@@ -70,3 +70,21 @@ class Movie(Base):
     trailer_key = Column(String(50))  # YouTube trailer key
 
     votes = relationship("Vote", back_populates="movie")
+    availabilities = relationship(
+        "MovieAvailability", back_populates="movie", cascade="all, delete-orphan"
+    )
+
+
+class MovieAvailability(Base):
+    """Track which movies are available in which region/platform."""
+
+    __tablename__ = "movie_availabilities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    movie_id = Column(Integer, ForeignKey("movies.id"), nullable=False)
+    region = Column(String(2), nullable=False)  # ISO 3166-1 alpha-2 country code
+    provider_id = Column(Integer, nullable=False)  # TMDB watch provider ID
+
+    movie = relationship("Movie", back_populates="availabilities")
+
+    __table_args__ = (UniqueConstraint("movie_id", "region", "provider_id"),)
