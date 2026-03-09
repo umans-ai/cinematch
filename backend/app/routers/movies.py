@@ -33,12 +33,17 @@ with open(_MOVIES_FILE) as f:
 def _seed_static_movies(db: Session, region: str = "US", provider_id: int = 8) -> None:
     """Seed the database with static movies if empty (fallback when no TMDB)."""
     if db.query(Movie).count() == 0:
+        # First time - create all movies
         for movie_data in STATIC_MOVIES:
             movie = Movie(**movie_data)
             db.add(movie)
             db.commit()
             db.refresh(movie)
             # Record availability for the room's region/provider
+            _record_movie_availability(db, movie, region, provider_id)
+    else:
+        # Movies already exist - ensure availability is recorded for this region/provider
+        for movie in db.query(Movie).all():
             _record_movie_availability(db, movie, region, provider_id)
 
 
