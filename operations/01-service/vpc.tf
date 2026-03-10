@@ -2,8 +2,9 @@
 # Production uses foundation VPC (legacy), previews get their own VPC
 
 locals {
-  # Use foundation VPC for production, create new VPC for previews
-  use_foundation_vpc = terraform.workspace == "production"
+  # Use foundation VPC for production UNLESS migration mode is enabled
+  # During migration: create_new_vpc=true forces new VPC creation for blue-green deployment
+  use_foundation_vpc = terraform.workspace == "production" && !var.create_new_vpc
 
   # For previews: generate unique network offset to avoid CIDR conflicts
   # random_id gives 0-255, we add 10 but must stay <= 255 for valid IP octet
