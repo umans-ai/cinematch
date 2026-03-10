@@ -1,243 +1,68 @@
-# Production VPC and PostgreSQL Migration
+# Production VPC and PostgreSQL Migration - FINAL CUTOVER
 
-## Goal
+## Current Situation (Post-Recovery)
 
-Migrate production from legacy foundation VPC (SQLite) to per-environment VPC architecture with PostgreSQL, achieving:
+After the failed migration attempt on March 10, 2026, the production environment is in a transitional state:
 
-- **Uniform architecture**: All environments (production, previews, staging) use identical infrastructure patterns
-- **Zero legacy code**: Remove conditional logic for "foundation VPC" vs "per-environment VPC"
-- **PostgreSQL everywhere**: SQLite completely eliminated from all environments
-- **Automatic migrations**: Database migrations run automatically on deployment
-- **Zero data loss**: Seamless migration of existing production data
-- **Verified correctness**: Characterization tests prove functional equivalence before/after
+- **Blue environment**: Effectively destroyed (no ALB, no ECS services running)
+- **Foundation VPC**: Still exists but has no active services
+- **Route53**: Currently points to non-existent ALB
+- **Data**: SQLite database backup exists in EFS
 
-## Motivation
+## Simplified Cutover Strategy
 
-Currently, production is a "special snowflake":
+Since there's no active "blue" environment to maintain, we will:
 
-| Aspect | Production | Previews | Problem |
-|--------|-----------|----------|---------|
-| VPC | `00-foundation/vpc.tf` (shared) | `01-service/vpc.tf` (per-env) | Architecture divergence |
-| Database | SQLite on EFS | PostgreSQL RDS | Different behavior, no concurrency |
-| Code paths | `use_foundation_vpc = true` | `use_foundation_vpc = false` | Conditional complexity |
+1. **Create green environment** as the new production
+2. **Migrate data** from SQLite backup to PostgreSQL
+3. **Update Route53** to point to new ALB
+4. **Verify** everything works
 
-This violates our principle of **Répétabilité** (reproducibility). A preview is NOT an exact replica of production, leading to:
-- "Works in preview, fails in prod" scenarios
-- Untestable database migration paths
-- Operational complexity (two ways to do everything)
+## Execution Steps
 
-## Success Criteria
-
-- [ ] Production runs on `aws_vpc.cinematch` in `01-service` (not foundation VPC)
-- [ ] Production uses PostgreSQL RDS (not SQLite)
-- [ ] All production data migrated without loss
-- [ ] `use_foundation_vpc` logic completely removed from codebase
-- [ ] `00-foundation/vpc.tf` destroyed (only ECR, Route53, ACM remain)
-- [ ] Characterization tests pass before and after migration
-- [ ] Automated database migrations on deployment
-- [ ] Rollback plan tested and documented
-
-## Implementation Plan
-
-### Phase 0: Preparation and Characterization Testing
-
-#### 0.1 Create characterization tests with Playwright
-
-Before touching infrastructure, establish baseline behavior:
-
-```python
-# tests/characterization/test_production_e2e.py
-# These tests run against the LIVE production environment
-
-"""
-Characterization tests document current production behavior.
-These are NOT acceptance tests - they capture "what is", not "what should be".
-Any change in these tests after migration indicates a behavioral difference.
-"""
-
-import pytest
-from playwright.sync_api import Page, expect
-
-PRODUCTION_URL = "https://demo.cinematch.umans.ai"
-
-class TestRoomLifecycle:
-    """Characterization: Room creation and joining workflow"""
-
-    def test_homepage_loads(self, page: Page):
-        page.goto(PRODUCTION_URL)
-        expect(page).to_have_title(/CineMatch/)
-        expect(page.locator("text=Swipe-based movie picker")).to_be_visible()
-
-    def test_create_room_flow(self, page: Page):
-        """Capture: Room creation generates code, shows waiting screen"""
-        page.goto(PRODUCTION_URL)
-        page.click("text=Create Room")
-
-        # Characterization: Room code format (4 digits? 6 alphanumeric?)
-        room_code = page.locator("[data-testid='room-code']").inner_text()
-        assert len(room_code) > 0  # Document actual format
-
-        # Characterization: Waiting screen shows participant count
-        expect(page.locator("text=Waiting for partner")).to_be_visible()
-
-    def test_join_room_flow(self, page: Page):
-        """Capture: Joining with code pairs participants"""
-        # Create room in one context
-        page.goto(PRODUCTION_URL)
-        page.click("text=Create Room")
-        room_code = page.locator("[data-testid='room-code']").inner_text()
-
-        # Join from second context (incognito)
-        # Characterization: What happens when 2nd participant joins?
-        # - Both see movie swiping immediately?
-        # - Any intermediate state?
-
-    def test_voting_flow(self, page: Page):
-        """Capture: Swipe interactions and match detection"""
-        # Full flow: create room, join, swipe on movies
-        # Characterization: Match notification behavior
-        # Characterization: Vote persistence on refresh
-
-class TestDataPersistence:
-    """Characterization: Data survives page refreshes and sessions"""
-
-    def test_votes_persist_after_refresh(self, page: Page):
-        """Critical: SQLite vs PostgreSQL must behave identically"""
-        pass
-
-    def test_room_exists_after_creator_leaves(self, page: Page):
-        """Characterization: Room lifecycle when participants disconnect"""
-        pass
-
-class TestAPIContracts:
-    """Characterization: API response shapes"""
-
-    def test_health_endpoint(self, api_context):
-        """Capture: /health response format"""
-        response = api_context.get(f"{PRODUCTION_URL}/health")
-        assert response.status == 200
-        body = response.json()
-        # Document actual structure (may differ from docs)
-        assert "status" in body
-
-    def test_create_room_api(self, api_context):
-        """Capture: POST /api/rooms response shape"""
-        pass
-
-    def test_get_votes_api(self, api_context):
-        """Capture: GET /api/rooms/{code}/votes format"""
-        pass
-```
-
-**Execution:**
-```bash
-# Run against production BEFORE migration
-pytest tests/characterization/ -v --base-url=https://demo.cinematch.umans.ai
-# Save results as baseline
-pytest tests/characterization/ -v --base-url=https://demo.cinematch.umans.ai --json-report > characterization/baseline.json
-```
-
-#### 0.2 Export production data snapshot
-
-```bash
-# Create backup of current SQLite database
-aws ecs execute-command \
-  --cluster cinematch-production \
-  --task <task-id> \
-  --container backend \
-  --command "sh -c 'sqlite3 /app/data/cinematch.db .dump > /tmp/backup-$(date +%Y%m%d).sql'"
-
-# Copy to S3 for safekeeping
-aws s3 cp s3://cinematch-backups/production/pre-migration/
-```
-
-### Phase 1: Dual-Path Infrastructure (Temporary)
-
-**CRITICAL: Use distinct resource names for true blue-green deployment.**
-
-Without distinct names, Terraform performs in-place updates instead of creating parallel infrastructure, causing downtime.
-
-```hcl
-# operations/01-service/variables.tf
-variable "create_new_vpc" {
-  description = "Temporary: Create new VPC for production migration (blue-green)"
-  type        = bool
-  default     = false
-}
-```
-
-```hcl
-# operations/01-service/locals.tf (NEW FILE)
-locals {
-  # Blue-green naming: distinct resource names prevent in-place updates
-  env_suffix = var.create_new_vpc ? "-green" : ""
-
-  # During migration: can override for production
-  use_foundation_vpc = terraform.workspace == "production" && !var.create_new_vpc
-}
-```
-
-**Update all resource names to use `local.env_suffix`:**
-
-```hcl
-# operations/01-service/vpc.tf
-resource "aws_vpc" "cinematch" {
-  count = local.use_foundation_vpc ? 0 : 1
-
-  cidr_block = "10.${local.network_offset}.0.0/16"
-
-  tags = {
-    Name = "cinematch-${terraform.workspace}${local.env_suffix}"
-  }
-}
-
-# operations/01-service/alb.tf
-resource "aws_lb" "cinematch" {
-  name = "cinematch-${terraform.workspace}${local.env_suffix}"  # DISTINCT NAME
-  # ...
-}
-
-# operations/01-service/ecs-services.tf
-resource "aws_ecs_service" "backend" {
-  name = "backend${local.env_suffix}"  # DISTINCT NAME
-  # ...
-}
-```
-
-**Apply blue-green infrastructure:**
+### Step 1: Create Green Environment
 
 ```bash
 cd operations/01-service
 terraform workspace select production
 
-# Create GREEN environment (parallel, no impact on BLUE)
-terraform apply -var="create_new_vpc=true" -var="image_tag=<sha>"
+# Create GREEN environment (this becomes production)
+terraform apply -var="create_new_vpc=true" -var="image_tag=bf60f25816d6c30ad6b8dbcd0a6d179b43a8d490"
 ```
 
-**Created resources (green environment):**
-- `aws_vpc.cinematch[0]` - Name: `cinematch-production-green`
-- `aws_lb.cinematch` - Name: `cinematch-production-green` (distinct ALB)
-- `aws_ecs_service.backend` - Name: `backend-green` (distinct service)
-- `aws_db_instance.cinematch[0]` - PostgreSQL RDS
-- Target groups: `cinematch-backend-production-green`
+**Expected resources created:**
+- VPC: `cinematch-production-green`
+- ALB: `cinematch-production-green`
+- ECS Services: `backend-green`, `frontend-green`
+- RDS: `cinematch-production-green` (PostgreSQL)
+- Security Groups, Subnets, IGW, etc.
 
-**Unchanged (blue environment):**
-- ECS service `backend` (original, SQLite)
-- ALB `cinematch-production` (original)
-- Route53 still pointing to BLUE ALB
-- SQLite still active
-
-### Phase 2: Data Migration
-
-#### 2.1 Prepare migration container
+### Step 2: Verify Green Environment Health
 
 ```bash
-# Start a one-off task with the new image but migration command
+# Get new ALB DNS
+green_alb=$(aws elbv2 describe-load-balancers \
+  --names cinematch-production-green \
+  --query 'LoadBalancers[0].DNSName' --output text)
+
+# Test health endpoint
+curl -k https://$green_alb/health
+
+# Check ECS services
+aws ecs describe-services \
+  --cluster cinematch-production \
+  --services backend-green frontend-green
+```
+
+### Step 3: Migrate Data from SQLite to PostgreSQL
+
+```bash
+# Run migration task
 aws ecs run-task \
   --cluster cinematch-production \
   --launch-type FARGATE \
-  --task-definition cinematch-backend-production:<new-revision> \
-  --network-configuration "awsvpcConfiguration={subnets=[<new-private-subnet>],securityGroups=[<new-rds-sg>]}" \
+  --task-definition cinematch-backend-production:<revision> \
+  --network-configuration "awsvpcConfiguration={subnets=[<private-subnet-ids>],securityGroups=[<rds-sg-id>]}" \
   --overrides '{
     "containerOverrides": [{
       "name": "backend",
@@ -246,227 +71,47 @@ aws ecs run-task \
   }'
 ```
 
-#### 2.2 Migration script
+### Step 4: Update Route53 DNS
 
-```python
-# backend/scripts/migrate_sqlite_to_postgres.py
-"""One-time migration from SQLite to PostgreSQL."""
+After verifying green environment is healthy and data is migrated:
 
-import sqlite3
-import psycopg
-import os
-
-def migrate():
-    # Connect to SQLite source
-    sqlite_conn = sqlite3.connect('/tmp/source.db')
-    sqlite_cursor = sqlite_conn.cursor()
-
-    # Connect to PostgreSQL target
-    pg_conn = psycopg.connect(os.environ['DATABASE_URL'])
-    pg_cursor = pg_conn.cursor()
-
-    # Migrate tables in dependency order
-    tables = ['movies', 'rooms', 'participants', 'votes']
-    for table in tables:
-        sqlite_cursor.execute(f"SELECT * FROM {table}")
-        rows = sqlite_cursor.fetchall()
-        for row in rows:
-            pg_cursor.execute(f"INSERT INTO {table} VALUES (...)", row)
-
-    pg_conn.commit()
-
-    # Verify row counts match
-    for table in tables:
-        sqlite_count = sqlite_cursor.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        pg_cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        pg_count = pg_cursor.fetchone()[0]
-        assert sqlite_count == pg_count, f"Count mismatch for {table}"
-
-if __name__ == "__main__":
-    migrate()
-```
-
-### Phase 3: Blue-Green Cutover (DNS Switch)
-
-**Step 1: Verify GREEN is healthy**
 ```bash
-# Get GREEN ALB DNS (from Terraform output or AWS CLI)
-green_alb=$(aws elbv2 describe-load-balancers \
-  --names cinematch-production-green \
-  --query 'LoadBalancers[0].DNSName' --output text)
-
-# Test GREEN directly (bypass DNS)
-curl -k https://$green_alb/health
-# Should return {"status":"ok"}
+# Terraform will update Route53 to point to new ALB
+terraform apply -var="create_new_vpc=true" -var="image_tag=bf60f25816d6c30ad6b8dbcd0a6d179b43a8d490"
 ```
 
-**Step 2: Switch Route53 to GREEN ALB**
-```hcl
-# operations/01-service/route53.tf
-resource "aws_route53_record" "cinematch" {
-  zone_id = data.aws_route53_zone.umans.zone_id
-  name    = local.domain
-  type    = "A"
+This updates the Route53 record `demo.cinematch.umans.ai` to point to the new ALB.
 
-  alias {
-    # BLUE: data.terraform_remote_state.foundation.outputs.alb_dns_name
-    # GREEN: aws_lb.cinematch.dns_name (when create_new_vpc=true)
-    name                   = aws_lb.cinematch.dns_name
-    zone_id                = aws_lb.cinematch.zone_id
-    evaluate_target_health = true
-  }
-}
-```
+### Step 5: Verify Production
 
-**Step 3: Apply cutover**
 ```bash
-cd operations/01-service
-terraform apply -var="create_new_vpc=true" -var="image_tag=<sha>"
-```
+# Wait for DNS propagation (up to 60 seconds)
+sleep 60
 
-**What happens:**
-- Route53 record updated to point to GREEN ALB
-- BLUE ALB still exists (for instant rollback)
-- DNS TTL: 60 seconds (propagation time)
-
-**Step 4: Verify cutover**
-```bash
-# Check which ALB serves traffic
-dig demo.cinematch.umans.ai
-
-# Verify PostgreSQL is active
+# Test production URL
 curl https://demo.cinematch.umans.ai/health
-aws logs tail /ecs/cinematch-backend-production-green --follow | grep "PostgreSQL"
 ```
 
-**Rollback (if needed):**
-```bash
-# Instant rollback to BLUE
-cd operations/01-service
-terraform apply -var="create_new_vpc=false" -var="image_tag=<original-sha>"
-```
+### Step 6: Cleanup (After Verification)
 
-### Phase 4: Cleanup
-
-- Remove `create_new_vpc` variable
-- Destroy foundation VPC
-- Update documentation
-
-## Continuous Database Migrations
-
-With PostgreSQL, migrations run automatically on every deployment using an entrypoint script:
+Once production is verified working on PostgreSQL:
 
 ```bash
-# docker-entrypoint.sh
-#!/bin/bash
-set -e
-if [ "$RUN_MIGRATIONS" = "true" ]; then
-    python -c "from app.migrations import run_migrations_with_lock; run_migrations_with_lock()"
-fi
-exec "$@"
+# Remove create_new_vpc variable
+# Destroy foundation VPC (if no longer needed)
+# Update documentation
 ```
-
-### Migration Concurrency Safety
-
-With multiple ECS tasks, concurrent migrations are serialized using PostgreSQL advisory locks:
-
-```python
-# backend/app/migrations.py
-import alembic.config
-from sqlalchemy import create_engine, text
-
-MIGRATION_LOCK_ID = 54291
-
-def run_migrations_with_lock(max_wait_seconds=300):
-    """Run Alembic migrations with PostgreSQL advisory locking."""
-    engine = create_engine(os.environ['DATABASE_URL'])
-
-    with engine.connect() as conn:
-        result = conn.execute(text(f"SELECT pg_try_advisory_lock({MIGRATION_LOCK_ID})"))
-        acquired = result.scalar()
-
-        if not acquired:
-            conn.execute(text(f"SELECT pg_advisory_lock({MIGRATION_LOCK_ID})"))
-
-        try:
-            alembic.config.main(argv=['upgrade', 'head'])
-        finally:
-            conn.execute(text(f"SELECT pg_advisory_unlock({MIGRATION_LOCK_ID})"))
-```
-
-**Scenarios Handled:**
-
-| Scenario | Behavior |
-|----------|----------|
-| Single instance | Acquires lock immediately, runs migrations |
-| Rolling deployment | First instance runs migrations, second waits |
-| Crash during migration | Lock released on connection close, next instance retries |
-
-## Architecture: Current vs Target
-
-### Current State
-
-```
-PRODUCTION (workspace)
-├── 00-foundation VPC (vpc-06a28ad9b2a6ae19e, CIDR 10.1.0.0/16)
-│   ├── ECS Backend (SQLite: /app/data/cinematch.db)
-│   ├── ECS Frontend
-│   └── EFS with SQLite file
-│
-└── ALB (uses foundation subnets)
-    └── Route53: demo.cinematch.umans.ai
-
-PREVIEW (e.g., pr-56)
-├── 01-service VPC (dynamically created, CIDR 10.x.0.0/16)
-│   ├── ECS Backend (PostgreSQL)
-│   ├── ECS Frontend
-│   └── RDS PostgreSQL
-│
-└── ALB (uses preview VPC)
-    └── Route53: demo-pr-56.cinematch.umans.ai
-```
-
-### Target State
-
-```
-PRODUCTION (workspace)
-├── 01-service VPC (new, CIDR 10.x.0.0/16)
-│   ├── ECS Backend (PostgreSQL RDS)
-│   ├── ECS Frontend
-│   └── RDS PostgreSQL (data migrated from SQLite)
-│
-└── ALB (uses new VPC)
-    └── Route53: demo.cinematch.umans.ai
-
-00-FOUNDATION (destroyed)
-❌ VPC vpc-06a28ad9b2a6ae19e - DESTROYED
-❌ SQLite on EFS - DESTROYED (backup kept 7d)
-✅ ECR Repositories - KEPT
-✅ Route53 Zone - KEPT
-✅ ACM Certificate - KEPT
-
-UNIFORM: Production == Previews (VPC per environment + PostgreSQL)
-```
-
-## No Preview Environment Needed
-
-**No preview environment is required for this migration.**
-
-Preview environments already use the target architecture (per-environment VPC + PostgreSQL). This migration is specifically about bringing **production** in line with what previews already do.
-
-## Documentation Updates Required
-
-- [ ] Update `docs/architecture/overview.md` - remove foundation VPC references
-- [ ] Update `docs/architecture/decisions/004-vpc-per-environment.md` - mark as "Implemented"
-- [ ] Update `CLAUDE.md` - remove SQLite references from configuration section
-- [ ] Create ADR: "005-production-postgresql-migration" documenting the cutover strategy
 
 ## Rollback Plan
 
-| Scenario | Action | Recovery Time |
-|----------|--------|---------------|
-| Pre-cutover data issues | Destroy new VPC, retry migration | 10 min |
-| Post-cutover functional issues | Revert Route53 to foundation ALB | 1 min |
-| Data corruption post-cutover | Restore SQLite from backup, revert DNS | 15 min |
+If issues occur:
 
-**Critical:** Keep SQLite backup for 7 days post-migration.}
+1. **Before Route53 update**: Simply destroy green environment and recreate blue from backup
+2. **After Route53 update**: Update Route53 manually to point back to foundation ALB (if recreated)
+
+## Critical Notes
+
+- There will be **brief downtime** during this migration (~5-10 minutes)
+- SQLite data backup must be restored to EFS before migration
+- The migration script handles the SQLite → PostgreSQL data transfer
+- All commits have been made to preserve history
