@@ -1,12 +1,7 @@
-# Local values for blue-green deployment support
+# Local values
 locals {
-  # Environment suffix for blue-green deployment
-  # When create_new_vpc=true, resources get "-green" suffix for parallel deployment
-  env_suffix = var.create_new_vpc ? "-green" : ""
-
-  # Use foundation VPC for production UNLESS migration mode is enabled
-  # During migration: create_new_vpc=true forces new VPC creation for blue-green deployment
-  use_foundation_vpc = terraform.workspace == "production" && !var.create_new_vpc
+  # All environments use per-environment VPC (migration complete)
+  use_foundation_vpc = false
 
   # Domain configuration
   domain = terraform.workspace == "production" ? "demo.cinematch.umans.ai" : "demo-${terraform.workspace}.cinematch.umans.ai"

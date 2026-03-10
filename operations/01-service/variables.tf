@@ -9,9 +9,3 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
-
-variable "create_new_vpc" {
-  description = "Temporary: Create new VPC for production migration (blue-green deployment)"
-  type        = bool
-  default     = false
-}
