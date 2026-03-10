@@ -2,7 +2,9 @@
 # Per-environment ALB (production, pr-123, etc.)
 
 resource "aws_lb" "cinematch" {
-  name               = "cinematch-${terraform.workspace}"
+  # Note: This ALB was created during migration with -green suffix.
+  # Renaming would require destroy+create (downtime), so we keep the name.
+  name               = "cinematch-${terraform.workspace}-green"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -17,7 +19,9 @@ resource "aws_lb" "cinematch" {
 
 # Target Groups
 resource "aws_lb_target_group" "backend" {
-  name        = "cinematch-backend-${terraform.workspace}"
+  # Note: Created with -green suffix during migration.
+  # Changing name forces recreate (loses target registrations).
+  name        = "cm-backend-${terraform.workspace}-green"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
@@ -39,7 +43,9 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name        = "cinematch-frontend-${terraform.workspace}"
+  # Note: Created with -green suffix during migration.
+  # Changing name forces recreate.
+  name        = "cm-frontend-${terraform.workspace}-green"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id

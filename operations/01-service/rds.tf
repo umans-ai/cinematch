@@ -1,9 +1,7 @@
 # RDS PostgreSQL Database
 # Managed PostgreSQL instance for CineMatch
-# Note: RDS is only created for non-production workspaces (previews)
-# Production uses SQLite until VPC migration is complete
 
-# DB Subnet Group - only for previews (private subnets required)
+# DB Subnet Group
 resource "aws_db_subnet_group" "cinematch" {
   count = length(local.private_subnet_ids) > 0 ? 1 : 0
 
@@ -15,7 +13,7 @@ resource "aws_db_subnet_group" "cinematch" {
   }
 }
 
-# Security Group for RDS - only for previews
+# Security Group for RDS
 resource "aws_security_group" "rds" {
   count = length(local.private_subnet_ids) > 0 ? 1 : 0
 
@@ -48,10 +46,11 @@ resource "random_password" "db_password" {
   special = false
 }
 
-# RDS PostgreSQL Instance - only for previews
+# RDS PostgreSQL Instance
 resource "aws_db_instance" "cinematch" {
   count = length(local.private_subnet_ids) > 0 ? 1 : 0
 
+  # Note: This was renamed from -green to clean name via AWS CLI
   identifier     = "cinematch-${terraform.workspace}"
   engine         = "postgres"
   engine_version = "16"
