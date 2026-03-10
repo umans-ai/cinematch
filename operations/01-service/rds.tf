@@ -48,13 +48,11 @@ resource "random_password" "db_password" {
   special = false
 }
 
-# RDS PostgreSQL Instance
+# RDS PostgreSQL Instance - only for previews
 resource "aws_db_instance" "cinematch" {
   count = length(local.private_subnet_ids) > 0 ? 1 : 0
 
-  # Note: identifier stays as -green due to migration history
-  # Changing it would force recreate (destroy+create) which loses data
-  identifier     = "cinematch-${terraform.workspace}-green"
+  identifier     = "cinematch-${terraform.workspace}"
   engine         = "postgres"
   engine_version = "16"
   instance_class = "db.t4g.micro"

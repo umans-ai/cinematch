@@ -2,9 +2,7 @@
 # Per-environment ALB (production, pr-123, etc.)
 
 resource "aws_lb" "cinematch" {
-  # Keep -green suffix to avoid recreation (stateful resource)
-  # Changing name would destroy and recreate (causes downtime)
-  name               = "cinematch-${terraform.workspace}-green"
+  name               = "cinematch-${terraform.workspace}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -19,8 +17,7 @@ resource "aws_lb" "cinematch" {
 
 # Target Groups
 resource "aws_lb_target_group" "backend" {
-  # Keep -green suffix; changing name forces recreate (loses target registrations)
-  name        = "cm-backend-${terraform.workspace}-green"
+  name        = "cinematch-backend-${terraform.workspace}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
@@ -42,8 +39,7 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  # Keep -green suffix; changing name forces recreate
-  name        = "cm-frontend-${terraform.workspace}-green"
+  name        = "cinematch-frontend-${terraform.workspace}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id

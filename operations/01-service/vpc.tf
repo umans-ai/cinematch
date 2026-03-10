@@ -1,5 +1,5 @@
 # VPC and Networking
-# Production uses foundation VPC (legacy), previews get their own VPC
+# Per-environment VPC (production now uses its own VPC, not foundation)
 
 locals {
   # For previews: generate unique network offset to avoid CIDR conflicts
@@ -27,9 +27,8 @@ resource "aws_vpc" "cinematch" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  # Keep -green suffix; VPC contains all resources, recreation = total rebuild
   tags = {
-    Name = "cinematch-${terraform.workspace}-green"
+    Name = "cinematch-${terraform.workspace}"
   }
 }
 
