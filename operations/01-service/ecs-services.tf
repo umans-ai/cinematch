@@ -36,6 +36,10 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "CORS_ORIGINS"
           value = "https://${local.domain}"
+        },
+        {
+          name  = "RUN_MIGRATIONS"
+          value = "true"
         }
       ]
       secrets = [
