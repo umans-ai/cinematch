@@ -100,7 +100,8 @@ resource "aws_ecs_task_definition" "frontend" {
 
 # Backend ECS Service
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
+  # Keep -green suffix to avoid service recreation
+  name            = "backend-green"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.backend.arn
   desired_count   = 1
@@ -128,7 +129,8 @@ resource "aws_ecs_service" "backend" {
 
 # Frontend ECS Service
 resource "aws_ecs_service" "frontend" {
-  name            = "frontend"
+  # Keep -green suffix to avoid service recreation
+  name            = "frontend-green"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = 1
