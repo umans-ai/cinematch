@@ -52,7 +52,7 @@ resource "random_password" "db_password" {
 resource "aws_db_instance" "cinematch" {
   count = length(local.private_subnet_ids) > 0 ? 1 : 0
 
-  identifier     = "cinematch-${terraform.workspace}"
+  identifier     = "cinematch-${terraform.workspace}${local.env_suffix}"
   engine         = "postgres"
   engine_version = "16"
   instance_class = "db.t4g.micro"

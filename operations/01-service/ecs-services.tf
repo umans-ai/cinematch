@@ -100,7 +100,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
 # Backend ECS Service
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
+  name            = "backend${local.env_suffix}"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.backend.arn
   desired_count   = 1
@@ -128,7 +128,7 @@ resource "aws_ecs_service" "backend" {
 
 # Frontend ECS Service
 resource "aws_ecs_service" "frontend" {
-  name            = "frontend"
+  name            = "frontend${local.env_suffix}"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = 1

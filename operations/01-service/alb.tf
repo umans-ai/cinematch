@@ -2,7 +2,8 @@
 # Per-environment ALB (production, pr-123, etc.)
 
 resource "aws_lb" "cinematch" {
-  name               = "cinematch-${terraform.workspace}"
+  # Blue-green: distinct name when create_new_vpc=true
+  name               = "cinematch-${terraform.workspace}${local.env_suffix}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -11,13 +12,14 @@ resource "aws_lb" "cinematch" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "cinematch-${terraform.workspace}"
+    Name = "cinematch-${terraform.workspace}${local.env_suffix}"
   }
 }
 
 # Target Groups
 resource "aws_lb_target_group" "backend" {
-  name        = "cinematch-backend-${terraform.workspace}"
+  # Blue-green: distinct name when create_new_vpc=true
+  name        = "cinematch-backend-${terraform.workspace}${local.env_suffix}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
@@ -39,7 +41,8 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name        = "cinematch-frontend-${terraform.workspace}"
+  # Blue-green: distinct name when create_new_vpc=true
+  name        = "cinematch-frontend-${terraform.workspace}${local.env_suffix}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id

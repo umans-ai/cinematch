@@ -153,42 +153,78 @@ aws s3 cp s3://cinematch-backups/production/pre-migration/
 
 ### Phase 1: Dual-Path Infrastructure (Temporary)
 
-Create temporary variable to support blue-green deployment:
+**CRITICAL: Use distinct resource names for true blue-green deployment.**
+
+Without distinct names, Terraform performs in-place updates instead of creating parallel infrastructure, causing downtime.
 
 ```hcl
 # operations/01-service/variables.tf
 variable "create_new_vpc" {
-  description = "Temporary: Create new VPC for production migration"
+  description = "Temporary: Create new VPC for production migration (blue-green)"
   type        = bool
   default     = false
 }
 ```
 
 ```hcl
-# operations/01-service/vpc.tf (temporary state)
+# operations/01-service/locals.tf (NEW FILE)
 locals {
+  # Blue-green naming: distinct resource names prevent in-place updates
+  env_suffix = var.create_new_vpc ? "-green" : ""
+
   # During migration: can override for production
   use_foundation_vpc = terraform.workspace == "production" && !var.create_new_vpc
 }
 ```
 
-Apply with `create_new_vpc=true` to create parallel infrastructure:
+**Update all resource names to use `local.env_suffix`:**
+
+```hcl
+# operations/01-service/vpc.tf
+resource "aws_vpc" "cinematch" {
+  count = local.use_foundation_vpc ? 0 : 1
+
+  cidr_block = "10.${local.network_offset}.0.0/16"
+
+  tags = {
+    Name = "cinematch-${terraform.workspace}${local.env_suffix}"
+  }
+}
+
+# operations/01-service/alb.tf
+resource "aws_lb" "cinematch" {
+  name = "cinematch-${terraform.workspace}${local.env_suffix}"  # DISTINCT NAME
+  # ...
+}
+
+# operations/01-service/ecs-services.tf
+resource "aws_ecs_service" "backend" {
+  name = "backend${local.env_suffix}"  # DISTINCT NAME
+  # ...
+}
+```
+
+**Apply blue-green infrastructure:**
 
 ```bash
 cd operations/01-service
 terraform workspace select production
+
+# Create GREEN environment (parallel, no impact on BLUE)
 terraform apply -var="create_new_vpc=true" -var="image_tag=<sha>"
 ```
 
 **Created resources (green environment):**
-- `aws_vpc.cinematch` (new, CIDR 10.x.0.0/16)
-- `aws_subnet.private[*]` (for RDS)
-- `aws_db_instance.cinematch` (PostgreSQL)
-- New ALB (not yet receiving traffic)
+- `aws_vpc.cinematch[0]` - Name: `cinematch-production-green`
+- `aws_lb.cinematch` - Name: `cinematch-production-green` (distinct ALB)
+- `aws_ecs_service.backend` - Name: `backend-green` (distinct service)
+- `aws_db_instance.cinematch[0]` - PostgreSQL RDS
+- Target groups: `cinematch-backend-production-green`
 
 **Unchanged (blue environment):**
-- ECS services still on foundation VPC
-- Route53 still pointing to old ALB
+- ECS service `backend` (original, SQLite)
+- ALB `cinematch-production` (original)
+- Route53 still pointing to BLUE ALB
 - SQLite still active
 
 ### Phase 2: Data Migration
@@ -250,16 +286,64 @@ if __name__ == "__main__":
     migrate()
 ```
 
-### Phase 3: Blue-Green Cutover
+### Phase 3: Blue-Green Cutover (DNS Switch)
 
-Switch Route53 to new ALB:
+**Step 1: Verify GREEN is healthy**
+```bash
+# Get GREEN ALB DNS (from Terraform output or AWS CLI)
+green_alb=$(aws elbv2 describe-load-balancers \
+  --names cinematch-production-green \
+  --query 'LoadBalancers[0].DNSName' --output text)
 
+# Test GREEN directly (bypass DNS)
+curl -k https://$green_alb/health
+# Should return {"status":"ok"}
+```
+
+**Step 2: Switch Route53 to GREEN ALB**
 ```hcl
+# operations/01-service/route53.tf
 resource "aws_route53_record" "cinematch" {
+  zone_id = data.aws_route53_zone.umans.zone_id
+  name    = local.domain
+  type    = "A"
+
   alias {
-    name = aws_lb.cinematch.dns_name  # NEW: was foundation ALB
+    # BLUE: data.terraform_remote_state.foundation.outputs.alb_dns_name
+    # GREEN: aws_lb.cinematch.dns_name (when create_new_vpc=true)
+    name                   = aws_lb.cinematch.dns_name
+    zone_id                = aws_lb.cinematch.zone_id
+    evaluate_target_health = true
   }
 }
+```
+
+**Step 3: Apply cutover**
+```bash
+cd operations/01-service
+terraform apply -var="create_new_vpc=true" -var="image_tag=<sha>"
+```
+
+**What happens:**
+- Route53 record updated to point to GREEN ALB
+- BLUE ALB still exists (for instant rollback)
+- DNS TTL: 60 seconds (propagation time)
+
+**Step 4: Verify cutover**
+```bash
+# Check which ALB serves traffic
+dig demo.cinematch.umans.ai
+
+# Verify PostgreSQL is active
+curl https://demo.cinematch.umans.ai/health
+aws logs tail /ecs/cinematch-backend-production-green --follow | grep "PostgreSQL"
+```
+
+**Rollback (if needed):**
+```bash
+# Instant rollback to BLUE
+cd operations/01-service
+terraform apply -var="create_new_vpc=false" -var="image_tag=<original-sha>"
 ```
 
 ### Phase 4: Cleanup
