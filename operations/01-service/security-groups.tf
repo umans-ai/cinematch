@@ -2,9 +2,8 @@
 # Per-environment security groups (ALB and ECS)
 
 resource "aws_security_group" "alb" {
-  # Blue-green: distinct name when create_new_vpc=true
-  name        = "cinematch-alb-${terraform.workspace}${local.env_suffix}"
-  description = "ALB for CineMatch ${terraform.workspace}${local.env_suffix}"
+  name        = "cinematch-alb-${terraform.workspace}"
+  description = "ALB for CineMatch ${terraform.workspace}"
   vpc_id      = local.vpc_id
 
   ingress {
@@ -29,7 +28,7 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "cinematch-alb-${terraform.workspace}${local.env_suffix}"
+    Name = "cinematch-alb-${terraform.workspace}"
   }
 }
 

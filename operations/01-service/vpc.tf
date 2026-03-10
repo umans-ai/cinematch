@@ -28,7 +28,7 @@ resource "aws_vpc" "cinematch" {
   enable_dns_support   = true
 
   tags = {
-    Name = "cinematch-${terraform.workspace}${local.env_suffix}"
+    Name = "cinematch-${terraform.workspace}"
   }
 }
 

@@ -2,8 +2,7 @@
 # Per-environment ALB (production, pr-123, etc.)
 
 resource "aws_lb" "cinematch" {
-  # Blue-green: distinct name when create_new_vpc=true
-  name               = "cinematch-${terraform.workspace}${local.env_suffix}"
+  name               = "cinematch-${terraform.workspace}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -12,15 +11,14 @@ resource "aws_lb" "cinematch" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "cinematch-${terraform.workspace}${local.env_suffix}"
+    Name = "cinematch-${terraform.workspace}"
   }
 }
 
 # Target Groups
 resource "aws_lb_target_group" "backend" {
-  # Blue-green: distinct name when create_new_vpc=true
   # Use 'cm' prefix to stay under 32 character limit
-  name        = "cm-backend-${terraform.workspace}${local.env_suffix}"
+  name        = "cm-backend-${terraform.workspace}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
@@ -42,9 +40,8 @@ resource "aws_lb_target_group" "backend" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  # Blue-green: distinct name when create_new_vpc=true
   # Use 'cm' prefix to stay under 32 character limit
-  name        = "cm-frontend-${terraform.workspace}${local.env_suffix}"
+  name        = "cm-frontend-${terraform.workspace}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
