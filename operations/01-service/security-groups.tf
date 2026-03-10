@@ -2,8 +2,9 @@
 # Per-environment security groups (ALB and ECS)
 
 resource "aws_security_group" "alb" {
-  name        = "cinematch-alb-${terraform.workspace}"
-  description = "ALB for CineMatch ${terraform.workspace}"
+  # Note: Created with -green suffix during migration.
+  name        = "cinematch-alb-${terraform.workspace}-green"
+  description = "ALB for CineMatch ${terraform.workspace}-green"
   vpc_id      = local.vpc_id
 
   ingress {
@@ -33,6 +34,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "ecs" {
+  # Note: This one was created without -green suffix (inconsistent)
   name        = "cinematch-ecs-${terraform.workspace}"
   description = "ECS tasks for CineMatch ${terraform.workspace}"
   vpc_id      = local.vpc_id

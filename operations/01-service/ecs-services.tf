@@ -1,7 +1,7 @@
 # ECS Services and Task Definitions
 # Per-environment ECS services (frontend and backend)
 
-# Database URL - SQLite for production (legacy), PostgreSQL for previews
+# Database URL - PostgreSQL for all environments
 locals {
   database_url = length(aws_db_instance.cinematch) > 0 ? (
     "postgresql://${aws_db_instance.cinematch[0].username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.cinematch[0].endpoint}/${aws_db_instance.cinematch[0].db_name}"
@@ -36,6 +36,10 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "CORS_ORIGINS"
           value = "https://${local.domain}"
+        },
+        {
+          name  = "RUN_MIGRATIONS"
+          value = "true"
         }
       ]
       secrets = [
@@ -96,7 +100,9 @@ resource "aws_ecs_task_definition" "frontend" {
 
 # Backend ECS Service
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
+  # Note: Created with -green suffix during migration.
+  # Changing name requires service recreation.
+  name            = "backend-green"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.backend.arn
   desired_count   = 1
@@ -124,7 +130,9 @@ resource "aws_ecs_service" "backend" {
 
 # Frontend ECS Service
 resource "aws_ecs_service" "frontend" {
-  name            = "frontend"
+  # Note: Created with -green suffix during migration.
+  # Changing name requires service recreation.
+  name            = "frontend-green"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = 1

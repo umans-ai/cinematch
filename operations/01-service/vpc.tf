@@ -1,5 +1,5 @@
 # VPC and Networking
-# Per-environment VPC (production now uses its own VPC, not foundation)
+# Per-environment VPC (all environments use their own VPC)
 
 locals {
   # For previews: generate unique network offset to avoid CIDR conflicts
@@ -7,19 +7,7 @@ locals {
   network_offset = local.use_foundation_vpc ? 1 : (random_id.network_offset[0].dec % 246) + 10
 }
 
-# Data source for foundation VPC (used by production)
-data "terraform_remote_state" "foundation_vpc" {
-  count = local.use_foundation_vpc ? 1 : 0
-
-  backend = "s3"
-  config = {
-    bucket = "umans-terraform-state"
-    key    = "cinematch/foundation/terraform.tfstate"
-    region = "eu-west-1"
-  }
-}
-
-# New VPC for previews only
+# New VPC for all environments
 resource "aws_vpc" "cinematch" {
   count = local.use_foundation_vpc ? 0 : 1
 
@@ -28,16 +16,17 @@ resource "aws_vpc" "cinematch" {
   enable_dns_support   = true
 
   tags = {
-    Name = "cinematch-${terraform.workspace}"
+    # Note: VPC was created with -green suffix during migration
+    Name = "cinematch-${terraform.workspace}-green"
   }
 }
 
 # VPC ID selector
 locals {
-  vpc_id = local.use_foundation_vpc ? data.terraform_remote_state.foundation_vpc[0].outputs.vpc_id : aws_vpc.cinematch[0].id
+  vpc_id = local.use_foundation_vpc ? data.terraform_remote_state.foundation.outputs.vpc_id : aws_vpc.cinematch[0].id
 }
 
-# Public subnets - use foundation for prod, create for previews
+# Public subnets
 resource "aws_subnet" "public" {
   count                   = local.use_foundation_vpc ? 0 : 2
   vpc_id                  = local.vpc_id
@@ -50,7 +39,7 @@ resource "aws_subnet" "public" {
   }
 }
 
-# Private subnets for RDS - use foundation for prod, create for previews
+# Private subnets for RDS
 resource "aws_subnet" "private" {
   count                   = local.use_foundation_vpc ? 0 : 2
   vpc_id                  = local.vpc_id
@@ -63,7 +52,7 @@ resource "aws_subnet" "private" {
   }
 }
 
-# Internet Gateway - only for previews
+# Internet Gateway
 resource "aws_internet_gateway" "cinematch" {
   count  = local.use_foundation_vpc ? 0 : 1
   vpc_id = local.vpc_id
@@ -73,7 +62,7 @@ resource "aws_internet_gateway" "cinematch" {
   }
 }
 
-# Route table - only for previews
+# Route table
 resource "aws_route_table" "public" {
   count  = local.use_foundation_vpc ? 0 : 1
   vpc_id = local.vpc_id
@@ -96,7 +85,7 @@ resource "aws_route_table_association" "public" {
 
 # Subnet ID selectors
 locals {
-  public_subnet_ids  = local.use_foundation_vpc ? data.terraform_remote_state.foundation_vpc[0].outputs.public_subnet_ids : aws_subnet.public[*].id
+  public_subnet_ids  = local.use_foundation_vpc ? data.terraform_remote_state.foundation.outputs.public_subnet_ids : aws_subnet.public[*].id
   private_subnet_ids = local.use_foundation_vpc ? [] : aws_subnet.private[*].id
 }
 
@@ -105,7 +94,7 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# Generate unique network offset per workspace (only used by previews)
+# Generate unique network offset per workspace
 resource "random_id" "network_offset" {
   count = local.use_foundation_vpc ? 0 : 1
 
