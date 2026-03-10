@@ -19,7 +19,8 @@ resource "aws_lb" "cinematch" {
 # Target Groups
 resource "aws_lb_target_group" "backend" {
   # Blue-green: distinct name when create_new_vpc=true
-  name        = "cinematch-backend-${terraform.workspace}${local.env_suffix}"
+  # Use 'cm' prefix to stay under 32 character limit
+  name        = "cm-backend-${terraform.workspace}${local.env_suffix}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
@@ -42,7 +43,8 @@ resource "aws_lb_target_group" "backend" {
 
 resource "aws_lb_target_group" "frontend" {
   # Blue-green: distinct name when create_new_vpc=true
-  name        = "cinematch-frontend-${terraform.workspace}${local.env_suffix}"
+  # Use 'cm' prefix to stay under 32 character limit
+  name        = "cm-frontend-${terraform.workspace}${local.env_suffix}"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
