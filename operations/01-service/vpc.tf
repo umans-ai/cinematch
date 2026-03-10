@@ -27,8 +27,9 @@ resource "aws_vpc" "cinematch" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
+  # Keep -green suffix; VPC contains all resources, recreation = total rebuild
   tags = {
-    Name = "cinematch-${terraform.workspace}"
+    Name = "cinematch-${terraform.workspace}-green"
   }
 }
 

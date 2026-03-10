@@ -24,6 +24,7 @@ dev = [
     "testcontainers[postgres]>=4.0.0",
     "pip-audit>=2.10.0",
     "pip-outdated>=0.8.0",
+    "pytest-playwright>=0.7.2",
 ]
 
 [build-system]
