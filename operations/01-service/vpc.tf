@@ -16,8 +16,7 @@ resource "aws_vpc" "cinematch" {
   enable_dns_support   = true
 
   tags = {
-    # Note: VPC was created with -green suffix during migration
-    Name = "cinematch-${terraform.workspace}-green"
+    Name = "cinematch-${terraform.workspace}"
   }
 }
 

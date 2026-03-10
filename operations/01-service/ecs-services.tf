@@ -100,9 +100,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
 # Backend ECS Service
 resource "aws_ecs_service" "backend" {
-  # Note: Created with -green suffix during migration.
-  # Changing name requires service recreation.
-  name            = "backend-green"
+  name            = "backend"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.backend.arn
   desired_count   = 1
@@ -130,9 +128,7 @@ resource "aws_ecs_service" "backend" {
 
 # Frontend ECS Service
 resource "aws_ecs_service" "frontend" {
-  # Note: Created with -green suffix during migration.
-  # Changing name requires service recreation.
-  name            = "frontend-green"
+  name            = "frontend"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = 1
