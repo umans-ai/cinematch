@@ -18,7 +18,3 @@ data "aws_route53_zone" "umans" {
   name         = "umans.ai"
   private_zone = false
 }
-
-locals {
-  is_production = terraform.workspace == "production"
-}

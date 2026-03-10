@@ -36,10 +36,6 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "CORS_ORIGINS"
           value = "https://${local.domain}"
-        },
-        {
-          name  = "RUN_MIGRATIONS"
-          value = "true"
         }
       ]
       secrets = [
@@ -100,8 +96,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
 # Backend ECS Service
 resource "aws_ecs_service" "backend" {
-  # Keep -green suffix to avoid service recreation
-  name            = "backend-green"
+  name            = "backend"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.backend.arn
   desired_count   = 1
@@ -129,8 +124,7 @@ resource "aws_ecs_service" "backend" {
 
 # Frontend ECS Service
 resource "aws_ecs_service" "frontend" {
-  # Keep -green suffix to avoid service recreation
-  name            = "frontend-green"
+  name            = "frontend"
   cluster         = aws_ecs_cluster.cinematch.id
   task_definition = aws_ecs_task_definition.frontend.arn
   desired_count   = 1
