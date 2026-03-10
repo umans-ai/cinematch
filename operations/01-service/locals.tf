@@ -11,9 +11,6 @@ locals {
   # Domain configuration
   domain = terraform.workspace == "production" ? "demo.cinematch.umans.ai" : "demo-${terraform.workspace}.cinematch.umans.ai"
 
-  # Environment flags
-  is_production = terraform.workspace == "production"
-
   # Common tags
   common_tags = {
     Environment = terraform.workspace
