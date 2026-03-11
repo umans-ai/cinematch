@@ -1,9 +1,7 @@
 """Database migration runner with PostgreSQL advisory locking."""
 
-import os
-import sys
-import time
 import logging
+import os
 
 import alembic.config
 from sqlalchemy import create_engine, text
@@ -51,7 +49,9 @@ def run_migrations_with_lock(max_wait_seconds: int = 300) -> None:
         acquired = result.scalar()
 
         if not acquired:
-            logger.info(f"Migration lock held by another instance, waiting (max {max_wait_seconds}s)...")
+            logger.info(
+                f"Migration lock held by another instance, waiting (max {max_wait_seconds}s)..."
+            )
 
             # Set statement timeout for blocking wait
             conn.execute(text(f"SET statement_timeout = '{max_wait_seconds * 1000}'"))
@@ -62,7 +62,9 @@ def run_migrations_with_lock(max_wait_seconds: int = 300) -> None:
                 logger.info("Acquired migration lock after waiting")
             except Exception as e:
                 logger.error(f"Failed to acquire migration lock: {e}")
-                raise TimeoutError(f"Could not acquire migration lock within {max_wait_seconds}s")
+                raise TimeoutError(
+                    f"Could not acquire migration lock within {max_wait_seconds}s"
+                )
 
         try:
             logger.info("Running Alembic migrations...")
@@ -99,7 +101,8 @@ def check_migration_status() -> dict:
         with engine.connect() as conn:
             # Check if alembic_version table exists
             result = conn.execute(text(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'alembic_version')"
+                "SELECT EXISTS (SELECT FROM information_schema.tables "
+                "WHERE table_name = 'alembic_version')"
             ))
             has_table = result.scalar()
 
@@ -113,12 +116,17 @@ def check_migration_status() -> dict:
             return {
                 'status': 'ok',
                 'current_version': version,
-                'database_url_type': 'postgresql' if database_url.startswith('postgresql') else 'sqlite'
+                'database_url_type': (
+                    'postgresql' if database_url.startswith('postgresql') else 'sqlite'
+                ),
             }
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    )
     run_migrations_with_lock()
