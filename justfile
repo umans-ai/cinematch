@@ -1,4 +1,4 @@
-# Local dev: fast feedback loop with PostgreSQL in Docker, code running locally
+# 🚀 Local development - PostgreSQL in Docker, code runs locally
 dev-local:
     #!/usr/bin/env bash
     set -e
@@ -101,7 +101,7 @@ dev-local:
     echo "📝 Logs: just dev-local-logs"
     echo "🛑 Stop: just dev-local-stop"
 
-# Stop local dev services
+# 🛑 Stop local dev services
 dev-local-stop:
     #!/usr/bin/env bash
     set +e
@@ -131,7 +131,7 @@ dev-local-stop:
     echo "   PostgreSQL stopped"
     echo "✅ All services stopped"
 
-# Show combined logs
+# 📝 Show combined logs (Ctrl+C to exit, services keep running)
 dev-local-logs:
     #!/usr/bin/env bash
     if command -v tail &>/dev/null; then
@@ -152,7 +152,7 @@ dev-local-logs:
         cat /tmp/cinematch-frontend.log 2>/dev/null || echo "No frontend logs"
     fi
 
-# Check if dev services are ready
+# 📊 Check status of local dev services
 dev-local-status:
     #!/usr/bin/env bash
     echo "📊 Services status:"
@@ -186,55 +186,72 @@ dev-local-status:
     echo "   Logs:   just dev-local-logs"
     echo "   Stop:   just dev-local-stop"
 
-# Alias for backward compatibility
-check-dev: dev-local-status
-
-# Stop local dev services
+# ⬇️ Stop PostgreSQL only
 dev-local-down:
     docker compose -f docker-compose.deps.yml down
 
-# Legacy docker-based dev (slower, full containerization)
+# 🐳 Full Docker dev (slower, for production-like testing)
 dev-docker:
     docker compose up --build
 
+# 🐳 Stop full Docker dev
 dev-docker-down:
     docker compose down
 
+# 📝 View PostgreSQL logs
 dev-logs:
     docker compose -f docker-compose.deps.yml logs -f
 
+# ✅ Run all checks (backend + frontend)
 check:
     cd backend && just check
     cd frontend && just check
 
+# ✅ Run backend tests only
 test:
     cd backend && just test
 
+# 📦 Build all Docker images
 docker-build:
     docker compose build
 
+# ─────────────────────────────────────────────────────────────
 # Backend shortcuts
+# ─────────────────────────────────────────────────────────────
+
+# 🐍 Start backend dev server only
 backend-dev:
     cd backend && just dev
 
+# ✅ Run backend tests
 backend-test:
     cd backend && just test
 
+# 🧹 Run backend linter
 backend-lint:
     cd backend && just lint
 
+# ─────────────────────────────────────────────────────────────
 # Frontend shortcuts
+# ─────────────────────────────────────────────────────────────
+
+# ⚡ Start frontend dev server only
 frontend-dev:
     cd frontend && just dev
 
+# 📦 Build frontend for production
 frontend-build:
     cd frontend && just build
 
+# 🧹 Run frontend linter
 frontend-lint:
     cd frontend && just lint
 
-# Check if current user is admin or contributor
-# Usage: just check-role
+# ─────────────────────────────────────────────────────────────
+# Maintainer tools
+# ─────────────────────────────────────────────────────────────
+
+# 👤 Check if you're an admin or contributor
 check-role:
     #!/usr/bin/env bash
     set -e
@@ -255,7 +272,7 @@ check-role:
         echo "   Note: You cannot push to main"
     fi
 
-# Maintainer: Accept a contributor and optionally close their issue
+# 🔑 Add contributor and close their request issue
 # Usage: just accept USERNAME [ISSUE_NUMBER]
 accept USERNAME ISSUE="":
     #!/usr/bin/env bash
@@ -265,10 +282,13 @@ accept USERNAME ISSUE="":
     echo "✅ @{{USERNAME}} invited with 'push' permission"
     if [ -n "{{ISSUE}}" ]; then
         echo "💬 Posting welcome comment on issue #{{ISSUE}}..."
-        gh issue comment {{ISSUE}} --body "Welcome @{{USERNAME}}! 🎉\n\nYou've been granted **write** access. You can now:\n- Clone directly: \`git clone https://github.com/umans-ai/cinematch.git\`\n- Push branches: \`git push origin your-branch\`\n- Get preview deployments on every PR\n\nSee [CONTRIBUTING.md](../../blob/main/CONTRIBUTING.md) to get started."
+        gh issue comment {{ISSUE}} --body "Welcome @{{USERNAME}}! 🎉\n\nYou have been granted **write** access. You can now:\n- Clone directly: \`git clone https://github.com/umans-ai/cinematch.git\`\n- Push branches: \`git push origin your-branch\`\n- Get preview deployments on every PR\n\nSee [CONTRIBUTING.md](../../blob/main/CONTRIBUTING.md) to get started."
         echo "🔒 Closing issue #{{ISSUE}}..."
         gh issue close {{ISSUE}} --reason completed
         echo "✅ Issue closed"
     fi
     echo ""
     echo "📧 @{{USERNAME}} will receive an email invitation to accept"
+
+# Alias for backward compatibility (deprecated)
+check-dev: dev-local-status
