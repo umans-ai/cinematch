@@ -5,22 +5,47 @@ dev-local:
     echo "🚀 Starting local dev environment..."
     echo ""
 
+    # Check ports are available
+    for port in 8000 3000; do
+        if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+            echo "❌ Port $port is already in use"
+            echo "   Run: just dev-local-stop"
+            exit 1
+        fi
+    done
+
     # Start PostgreSQL if not running
-    if ! docker compose -f docker-compose.deps.yml ps | grep -q "Up"; then
+    if ! docker compose -f docker-compose.deps.yml ps postgres | grep -q "Up"; then
         echo "📦 Starting PostgreSQL..."
         docker compose -f docker-compose.deps.yml up -d
-        sleep 2
     else
         echo "✅ PostgreSQL already running"
     fi
 
-    # Wait for PostgreSQL to be ready
+    # Get actual container name (handles both cinematch-postgres-1 and cinematch-main-postgres-1)
+    PG_CONTAINER=$(docker compose -f docker-compose.deps.yml ps -q postgres 2>/dev/null | head -1)
+    if [ -z "$PG_CONTAINER" ]; then
+        echo "❌ Failed to get PostgreSQL container name"
+        exit 1
+    fi
+
+    # Wait for PostgreSQL to be ready (max 30s)
     echo "⏳ Waiting for PostgreSQL..."
-    until docker exec cinematch-main-postgres-1 pg_isready -U cinematch > /dev/null 2>&1; do
+    for i in {1..60}; do
+        if docker exec "$PG_CONTAINER" pg_isready -U cinematch >/dev/null 2>&1; then
+            echo "✅ PostgreSQL ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            echo "❌ PostgreSQL failed to start"
+            exit 1
+        fi
         sleep 0.5
     done
-    echo "✅ PostgreSQL ready"
     echo ""
+
+    # Clear old logs
+    rm -f /tmp/cinematch-backend.log /tmp/cinematch-frontend.log
 
     # Start backend in background
     echo "🐍 Starting backend..."
@@ -34,87 +59,135 @@ dev-local:
     FRONTEND_PID=$!
     echo $FRONTEND_PID > /tmp/cinematch-frontend.pid
 
-    # Wait for services to be ready
-    echo "⏳ Waiting for services..."
-    sleep 3
+    # Wait for backend to be ready (max 30s)
+    echo "⏳ Waiting for backend..."
+    for i in {1..60}; do
+        if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+            echo "✅ Backend ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            echo "❌ Backend failed to start"
+            echo "   Logs: just dev-local-logs"
+            just dev-local-stop
+            exit 1
+        fi
+        sleep 0.5
+    done
 
-    # Show status
+    # Wait for frontend to be ready (max 30s)
+    echo "⏳ Waiting for frontend..."
+    for i in {1..60}; do
+        if curl -s http://localhost:3000 >/dev/null 2>&1; then
+            echo "✅ Frontend ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            echo "❌ Frontend failed to start"
+            echo "   Logs: just dev-local-logs"
+            just dev-local-stop
+            exit 1
+        fi
+        sleep 0.5
+    done
+
+    echo ""
+    echo "🎉 All services ready!"
     echo ""
     echo "📊 Services:"
-    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        echo "   ✅ Backend:  http://localhost:8000"
-    else
-        echo "   ❌ Backend failed to start (see /tmp/cinematch-backend.log)"
-    fi
-    if curl -s http://localhost:3000 > /dev/null 2>&1; then
-        echo "   ✅ Frontend: http://localhost:3000"
-    else
-        echo "   ❌ Frontend failed to start (see /tmp/cinematch-frontend.log)"
-    fi
+    echo "   Backend:  http://localhost:8000"
+    echo "   Frontend: http://localhost:3000"
     echo ""
-    echo "🧪 Ready for Playwright!"
-    echo ""
-    echo "📝 Logs:"
-    echo "   tail -f /tmp/cinematch-backend.log"
-    echo "   tail -f /tmp/cinematch-frontend.log"
-    echo ""
+    echo "📝 Logs: just dev-local-logs"
     echo "🛑 Stop: just dev-local-stop"
 
 # Stop local dev services
 dev-local-stop:
     #!/usr/bin/env bash
+    set +e
+    echo "🛑 Stopping services..."
+
+    # Kill by PID files if they exist
     if [ -f /tmp/cinematch-backend.pid ]; then
-        kill $(cat /tmp/cinematch-backend.pid) 2>/dev/null || true
-        rm /tmp/cinematch-backend.pid
-        echo "🛑 Backend stopped"
+        kill $(cat /tmp/cinematch-backend.pid) 2>/dev/null
+        rm -f /tmp/cinematch-backend.pid
+        echo "   Backend stopped"
     fi
     if [ -f /tmp/cinematch-frontend.pid ]; then
-        kill $(cat /tmp/cinematch-frontend.pid) 2>/dev/null || true
-        rm /tmp/cinematch-frontend.pid
-        echo "🛑 Frontend stopped"
+        kill $(cat /tmp/cinematch-frontend.pid) 2>/dev/null
+        rm -f /tmp/cinematch-frontend.pid
+        echo "   Frontend stopped"
     fi
-    FRONTEND_PIDS=$(lsof -ti :3000,:3001,:3002,:3003,:3004,:3005,:3006,:3007,:3008,:3009 2>/dev/null || true)
-    if [ -n "$FRONTEND_PIDS" ]; then
-        echo "$FRONTEND_PIDS" | xargs kill -9 2>/dev/null || true
-        echo "🛑 Frontend ports cleaned"
+
+    # Kill any processes on the ports (backup cleanup)
+    for port in 8000 3000 3001 3002 3003; do
+        PID=$(lsof -ti :$port -sTCP:LISTEN 2>/dev/null)
+        if [ -n "$PID" ]; then
+            kill -9 $PID 2>/dev/null
+        fi
+    done
+
+    docker compose -f docker-compose.deps.yml down 2>/dev/null
+    echo "   PostgreSQL stopped"
+    echo "✅ All services stopped"
+
+# Show combined logs
+dev-local-logs:
+    #!/usr/bin/env bash
+    if command -v tail &>/dev/null; then
+        echo "📝 Press Ctrl+C to exit logs (services keep running)"
+        echo "========================================== BACKEND =========================================="
+        tail -n 20 /tmp/cinematch-backend.log 2>/dev/null || echo "No backend logs yet"
+        echo ""
+        echo "========================================== FRONTEND =========================================="
+        tail -n 20 /tmp/cinematch-frontend.log 2>/dev/null || echo "No frontend logs yet"
+        echo ""
+        echo "========================================== FOLLOWING =========================================="
+        tail -f /tmp/cinematch-backend.log /tmp/cinematch-frontend.log 2>/dev/null
+    else
+        echo "Backend logs:"
+        cat /tmp/cinematch-backend.log 2>/dev/null || echo "No backend logs"
+        echo ""
+        echo "Frontend logs:"
+        cat /tmp/cinematch-frontend.log 2>/dev/null || echo "No frontend logs"
     fi
-    docker compose -f docker-compose.deps.yml down
-    echo "🛑 PostgreSQL stopped"
 
 # Check if dev services are ready
-check-dev:
+dev-local-status:
     #!/usr/bin/env bash
-    set -e
-    echo "🔍 Checking dev environment..."
+    echo "📊 Services status:"
     echo ""
 
-    # Check PostgreSQL (using docker exec since pg_isready may not be installed locally)
-    if docker exec cinematch-main-postgres-1 pg_isready -U cinematch >/dev/null 2>&1; then
-        echo "✅ PostgreSQL: localhost:5432"
+    # PostgreSQL
+    PG_CONTAINER=$(docker compose -f docker-compose.deps.yml ps -q postgres 2>/dev/null | head -1)
+    if [ -n "$PG_CONTAINER" ] && docker exec "$PG_CONTAINER" pg_isready -U cinematch >/dev/null 2>&1; then
+        echo "   ✅ PostgreSQL: localhost:5432 (container: $PG_CONTAINER)"
     else
-        echo "❌ PostgreSQL: not ready (run: just dev-local)"
-        exit 1
+        echo "   ❌ PostgreSQL: not running"
     fi
 
-    # Check Backend
+    # Backend
     if curl -s http://localhost:8000/health >/dev/null 2>&1; then
-        echo "✅ Backend:    http://localhost:8000"
+        echo "   ✅ Backend:    http://localhost:8000"
     else
-        echo "❌ Backend:    not ready (cd backend && just dev-local)"
-        exit 1
+        echo "   ❌ Backend:    not running"
     fi
 
-    # Check Frontend
+    # Frontend
     if curl -s http://localhost:3000 >/dev/null 2>&1; then
-        echo "✅ Frontend:   http://localhost:3000"
+        echo "   ✅ Frontend:   http://localhost:3000"
     else
-        echo "❌ Frontend:   not ready (cd frontend && just dev)"
-        exit 1
+        echo "   ❌ Frontend:   not running"
     fi
 
     echo ""
-    echo "🎉 All services ready! Test with Playwright:"
-    echo "   npx playwright test"
+    echo "Commands:"
+    echo "   Start:  just dev-local"
+    echo "   Logs:   just dev-local-logs"
+    echo "   Stop:   just dev-local-stop"
+
+# Alias for backward compatibility
+check-dev: dev-local-status
 
 # Stop local dev services
 dev-local-down:
