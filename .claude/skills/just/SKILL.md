@@ -1,11 +1,11 @@
 ---
 name: just
-description: Intelligent just target wrapper with context-aware suggestions
+description: Intelligent just target wrapper with context-aware suggestions for CineMatch
 ---
 
 # Just Helper
 
-Smart wrapper for just targets with context detection.
+Smart wrapper for just targets with context detection for CineMatch.
 
 ## Usage
 
@@ -19,45 +19,61 @@ With target: runs just <target>, verifies target exists first.
 | Context | Suggested Target |
 |---------|------------------|
 | Modified tests/ | `just test tests/<modified> -v` |
-| Modified CLI code | `just cli-checks` |
 | Modified justfile | `just check` |
 | No changes staged | `just check` (full verification) |
 | On feature branch, pre-commit | `just check` |
 | After git add | `just check` before commit |
+| Need to start dev | `just dev-local` |
+| Check if services running | `just dev-local-status` |
 
 ## Commands
 
 ### `/just`
 Analyze context and suggest:
 ```
-Detected: Modified cli/ code
-Suggested: just cli-checks
+Detected: Modified backend tests
+Suggested: just test tests/test_rooms.py -v
 Run? [Y/n/custom target]
 ```
 
 ### `/just <target>`
 Verify target exists in justfile, then run:
 ```
-/just cli-checks
-→ Running: just cli-checks...
+/just dev-local
+→ Running: just dev-local...
 ```
 
 ### `/just list`
 Show all available targets with descriptions.
 
-### `/just logs`
-Show recent just output from current session.
+### `/just status`
+Check if dev services are running.
 
 ## Common Targets Reference
 
-- `just check` - Full check suite (lint + typecheck + test + cli-checks)
-- `just test` - Run all tests
-- `just test tests/specific.py -v` - Run specific test verbose
-- `just cli-checks` - CLI syntax + static + runtime checks
-- `just cli-syntax` - Fast syntax validation
+### Root-level
+- `just check` - Full check suite (backend + frontend)
+- `just test` - Run backend tests only
+- `just dev-local` - Start dev environment (PostgreSQL + backend + frontend)
+- `just dev-local-status` - Check if services are running
+- `just dev-local-logs` - View combined logs
+- `just dev-local-stop` - Stop all services
+
+### Backend (cd backend)
+- `just check` - lint + fmt + typecheck + test + audit
+- `just test` - Run tests
+- `just lint` - ruff check
+- `just fmt` - ruff format
+- `just typecheck` - ty check
+- `just dev-local` - Start backend only
+- `just sync` - Sync dependencies
+
+### Frontend (cd frontend)
+- `just check` - lint + typecheck
+- `just lint` - eslint
+- `just typecheck` - tsc
 - `just dev` - Start dev server
-- `just fake` - Start fake upstream
-- `just obs-5xx-by-route` - Observability: 5xx errors by route
+- `just build` - Build for production
 
 ## Errors
 

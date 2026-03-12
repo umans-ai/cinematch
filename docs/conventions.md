@@ -149,18 +149,29 @@ Emojis:
 ## Just Targets
 
 ```bash
-just check      # Run all checks (lint + typecheck + test)
-just test       # Run tests only
-just lint       # Run linters
-just fmt        # Format code
-just typecheck  # Run type checkers
-just dev        # Start dev environment (docker-compose)
+# Root-level commands
+just check               # Run all checks (backend + frontend)
+test                     # Run backend tests only
+just dev-local           # Start full dev environment
+just dev-local-status    # Check status of all services
+just dev-local-logs      # View combined logs
+just dev-local-stop      # Stop all services
 
-# Backend-specific
-cd backend && just test
+# Backend-specific (cd backend)
+just check      # lint + fmt + typecheck + test + audit
+just test       # Run tests
+just lint       # ruff check
+just fmt        # ruff format
+just typecheck  # ty check
+just dev-local  # Start backend only
+just sync       # First time / after dependency changes
 
-# Frontend-specific
-cd frontend && just dev
+# Frontend-specific (cd frontend)
+just check      # lint + typecheck
+just lint       # eslint
+just typecheck  # tsc
+just dev        # Start frontend only
+just build      # Build for production
 ```
 
 Run `just -l` to see all available commands.

@@ -232,21 +232,29 @@ Run tests frequently: `just test` or `just test tests/specific_test.py -v`
 ### Just Targets
 
 ```bash
-just check      # Run all checks (lint + typecheck + test)
-just test       # Run tests only
-just lint       # Run linters
-just fmt        # Format code
-just typecheck  # Run type checkers
-just dev        # Start dev environment (docker-compose)
-just dev-logs   # Tail dev logs
+# Root-level commands
+just check               # Run all checks (backend + frontend)
+just test                # Run backend tests only
+just dev-local           # Start full dev environment (PostgreSQL + backend + frontend)
+just dev-local-status    # Check status of all services
+just dev-local-logs      # View combined logs
+just dev-local-stop      # Stop all services
 
-# Backend-specific (uses uv)
-cd backend && just sync    # First time / after dependency changes
-cd backend && just dev     # Start dev server
-cd backend && just test    # Run tests
+# Backend-specific (cd backend)
+just check      # lint + fmt + typecheck + test + audit
+just test       # Run tests
+just lint       # ruff check
+just fmt        # ruff format
+just typecheck  # ty check
+just dev-local  # Start backend only
+just sync       # First time / after dependency changes
 
-# Frontend-specific
-cd frontend && just dev
+# Frontend-specific (cd frontend)
+just check      # lint + typecheck
+just lint       # eslint
+just typecheck  # tsc
+just dev        # Start frontend only
+just build      # Build for production
 ```
 
 Run `just -l` to see all available commands.
