@@ -150,20 +150,20 @@ just check
 **Goal**: Verify the app starts correctly.
 
 ```bash
-# Quick test with Docker
-docker-compose up -d
+# Start the full dev environment
+just dev-local
 ```
 
-**Wait a few seconds, then check**:
+**Explain**: "`just dev-local` starts PostgreSQL in Docker, then the backend (port 8000) and frontend (port 3000) locally. It uses healthchecks to wait for services to be ready."
+
+**Verify it's running**:
 ```bash
-curl -s http://localhost:8000/health || echo "Backend not ready"
+just dev-local-status
 ```
-
-**Explain**: "Docker Compose starts the backend (port 8000) and frontend (port 3000). This is the easiest way to run everything together."
 
 **Stop after verification**:
 ```bash
-docker-compose down
+just dev-local-stop
 ```
 
 ### Phase 9: Detect Role and Project Orientation
@@ -186,11 +186,11 @@ just check-role
 **Architecture (30 seconds)**:
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Next.js   │────▶│   FastAPI   │────▶│   SQLite    │
-│  (frontend) │◀────│  (backend)  │     │   (local)   │
+│   Next.js   │────▶│   FastAPI   │────▶│  PostgreSQL │
+│  (frontend) │◀────│  (backend)  │     │   (Docker)  │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
-> "React frontend (Next.js) ↔ API backend (FastAPI) ↔ Database (SQLite locally, PostgreSQL in prod)"
+> "React frontend (Next.js) ↔ API backend (FastAPI) ↔ Database (PostgreSQL in Docker locally, RDS in prod)"
 
 **Contribution workflow (30 seconds)** - **Contributor mode**:
 > "**Important: You cannot push to `main`**, only create branches and PRs."
@@ -236,7 +236,7 @@ just check-role
 
 **Key conventions to remember**:
 - **Conventional commits**: `feat:`, `fix:`, `docs:` with emoji at the end
-- **Just targets**: `just check`, `just dev` - never long commands inline
+- **Just targets**: `just check`, `just dev-local`, `just dev-local-status` - never long commands inline
 - **Backlog-driven**: always a file in `docs/backlog/` to track work
 
 ### Phase 10: Deep Dive Offer
@@ -275,5 +275,5 @@ Onboarding is complete when:
 - [ ] Access request created (or already has access)
 - [ ] All prerequisites installed
 - [ ] `just check` passes
-- [ ] `docker-compose up` starts successfully
+- [ ] `just dev-local` starts successfully
 - [ ] Contributor understands the 3-sentence summary of product/arch/workflow
