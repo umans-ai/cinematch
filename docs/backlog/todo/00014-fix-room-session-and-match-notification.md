@@ -32,25 +32,22 @@ During E2E testing, two serious bugs were discovered:
 
 ## Technical Details
 
-### Bug 1 Fix: Database Schema Change
-**File**: `backend/app/models.py`
-
-Change:
-```python
-session_id = Column(String(100), unique=True)  # Current (BROKEN)
-```
-
-To:
-```python
-session_id = Column(String(100))  # Fixed - unique constraint removed
-```
-
-**Migration Required**: Yes, need to drop the unique index on session_id.
-
-**Alternative**: Keep uniqueness per room only:
+### Bug 1 Fix: Database Migration (NOT Model)
+**Status**: Le modèle Python (`models.py`) est déjà correct:
 ```python
 session_id = Column(String(100))
-__table_args__ = (UniqueConstraint('room_id', 'session_id'),)
+__table_args__ = (UniqueConstraint('room_id', 'session_id'),)  # ✅ Already correct
+```
+
+**Le problème**: La migration initiale (`cdc82f99bace`) crée la mauvaise contrainte.
+
+**Fix requis**: Nouvelle migration Alembic pour corriger la contrainte:
+```python
+def upgrade():
+    # Drop la contrainte globale créée par la migration initiale
+    op.drop_constraint('participants_session_id_key', 'participants', type_='unique')
+    # Crée la contrainte composite correcte
+    op.create_unique_constraint('uq_participants_room_session', 'participants', ['room_id', 'session_id'])
 ```
 
 ### Bug 2 Fix: Frontend State Management
@@ -89,34 +86,116 @@ const fetchMatches = useCallback(async () => {
 }, [code, previousMatches]);
 ```
 
-## Implementation Plan
-
-### Phase 1: Fix Room Session (Backend)
-1. Update `Participant` model to remove global UNIQUE constraint
-2. Add composite unique constraint on `(room_id, session_id)` if needed
-3. Create database migration
-4. Run backend tests to verify
-
-### Phase 2: Fix Match Notification (Frontend)
-1. Update `fetchMatches` to track previous match state
-2. Detect new matches by comparing with previous
-3. Auto-trigger `setShowMatch()` when new match detected
-4. Run frontend tests to verify
-
-### Phase 3: E2E Verification
-1. Run agent-browser E2E test
-2. Verify two users can join same room
-3. Verify match modal appears for both
-4. Verify user can join multiple rooms
-
 ## Test Files
 - `backend/tests/test_room_participation.py` - Tests for room joining
 - `backend/tests/test_multi_room_session.py` - Tests for multi-room
 - `backend/tests/test_match_notification.py` - Tests for match detection
 - `frontend/app/__tests__/match-notification.test.tsx` - Frontend tests
 
-## Notes
-- Both bugs have failing tests on branch `test/room-session-and-match-detection`
-- Database migration needed for Bug 1
-- No API changes needed for Bug 2 (pure frontend fix)
-- Consider adding polling or WebSocket for real-time match updates in future
+## Investigation Findings (2026-03-17)
+
+### Root Cause Analysis
+
+**Bug 1 - The Real Issue:**
+The code Python (`models.py`) a déjà la bonne contrainte:
+```python
+UniqueConstraint("room_id", "session_id")  # ✅ Composite unique
+```
+
+Mais la **migration initiale Alembic** (`cdc82f99bace`) crée la mauvaise contrainte:
+```python
+sa.UniqueConstraint('session_id')  # ❌ Global unique - BUG!
+```
+
+**Conséquence**: Sur une nouvelle DB (prod, preview, ou fresh local), la contrainte est incorrecte.
+
+**Pourquoi les tests passent:**
+- Tests unitaires (`test_room_participation.py`): Utilisent `Base.metadata.create_all()` qui crée le schéma depuis les modèles → OK
+- Tests d'intégration (`test_migrations.py`): Testent la structure des tables, pas le comportement métier avec les migrations
+
+**Le gap**: Aucun test ne vérifie "migrations + comportement métier" ensemble.
+
+### Bug 2 Status
+Le code frontend a déjà la logique de détection (lignes 101-123 de `page.tsx`):
+- `previousMatchIds` state pour tracker les matchs vus
+- Détection des nouveaux matchs
+- Auto-affichage du modal
+
+À valider si cela fonctionne correctement en conditions réelles.
+
+## Corrected Implementation Plan
+
+### Phase 1: Create Failing Integration Test
+**Nouveau test** dans `tests/integration/test_room_session.py`:
+- Monte PostgreSQL avec testcontainers
+- Joue `alembic upgrade head`
+- Teste: 2 sessions différentes peuvent rejoindre la même room
+- Teste: même session peut rejoindre 2 rooms différentes
+- **Doit fail** avec la migration actuelle
+
+### Phase 2: Fix Migration (Not Model)
+**Nouvelle migration Alembic**:
+```python
+def upgrade():
+    op.drop_constraint('participants_session_id_key', 'participants', type_='unique')
+    op.create_unique_constraint('uq_participants_room_session', 'participants', ['room_id', 'session_id'])
+
+def downgrade():
+    op.drop_constraint('uq_participants_room_session', 'participants', type_='unique')
+    op.create_unique_constraint('participants_session_id_key', 'participants', ['session_id'])
+```
+
+**Important**: Ne pas modifier `alembic.ini` (utilisé par la prod via `app/migrations.py`)
+
+### Phase 3: E2E Validation with Playwright MCP
+
+**Setup:**
+```bash
+just dev-local  # Avec DB fraîche (migrations jouées automatiquement)
+```
+
+**Test E2E avec 2 sessions réelles:**
+
+Option A - Deux navigateurs distincts (difficile avec MCP):
+- Navigateur A (cookies normaux): Alice crée room
+- Navigateur B (mode incognito): Bob rejoint
+
+Option B - Forcer des sessions différentes via API:
+- Créer room via API avec session "alice-123"
+- Rejoindre via API avec session "bob-456"
+- Vérifier que 2 participants existent
+
+Option C - Tests Playwright avec manipulation cookies:
+```javascript
+// Onglet 1: Alice
+await page.context().addCookies([{name: 'session_id', value: 'alice-session', ...}])
+
+// Nouveau contexte (pas juste onglet) pour Bob
+const bobContext = await browser.newContext()
+await bobContext.addCookies([{name: 'session_id', value: 'bob-session', ...}])
+const bobPage = await bobContext.newPage()
+```
+
+**Validation match notification:**
+- Alice like un film
+- Vérifier: modal NE s'affiche pas (1 seul vote)
+- Bob like le même film
+- Vérifier: modal s'affiche avec "It's a match!"
+- Vérifier: film visible dans la liste des matchs
+
+### Phase 4: Cleanup
+- Supprimer les commentaires `FIXME` obsolètes dans les tests
+- Mettre à jour `docs/architecture/decisions/002-migration-testing-approach.md` si besoin
+
+## Files to Modify
+- `backend/alembic/versions/XXXX_fix_participants_constraint.py` - NEW
+- `backend/tests/integration/test_room_session.py` - NEW
+- `backend/tests/test_multi_room_session.py` - Remove FIXME comments
+- `backend/tests/test_match_notification.py` - Remove FIXME comments
+
+## Validation Checklist
+- [ ] Test d'intégration fail avant la migration
+- [ ] Test d'intégration passe après la migration
+- [ ] E2E avec 2 sessions distinctes fonctionne
+- [ ] Match modal apparaît quand les 2 participants likent
+- [ ] Aucune modification de `alembic.ini`
