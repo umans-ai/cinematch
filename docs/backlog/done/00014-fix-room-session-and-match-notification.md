@@ -247,8 +247,38 @@ const bobPage = await bobContext.newPage()
 
 ## Validation Checklist
 - [x] `env.py` modifié pour fonctionner avec `DATABASE_URL` en local
-- [ ] Test d'intégration fail avant la migration
-- [ ] Test d'intégration passe après la migration
-- [ ] E2E avec 2 sessions distinctes fonctionne
-- [ ] Match modal apparaît quand les 2 participants likent
-- [ ] Aucune modification de `alembic.ini` (sécurité prod)
+- [x] Migration créée et testée sur PostgreSQL local
+- [x] FIXME comments removed from tests
+- [ ] **Pipeline CI verte** (bloqué: state lock Terraform)
+- [ ] **Preview déployée et accessible** (503 à investiguer)
+- [ ] E2E avec 2 sessions distinctes fonctionne sur preview
+
+## Investigation & Fixes (2026-03-17)
+
+### Investigation AWS CLI 🔍
+**503 Root Cause Found**: `ModuleNotFoundError: No module named 'alembic'`
+
+**Logs CloudWatch**:
+```
+2026-03-17T15:57:05 >>> Running database migrations...
+2026-03-17T15:57:05 Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/app/app/migrations.py", line 6, in <module>
+    import alembic.config
+ModuleNotFoundError: No module named 'alembic'
+```
+
+**Root Cause**: `docker-entrypoint.sh` utilisait `python` directement au lieu de `uv run python`
+- `uv sync --no-dev` crée un environnement virtuel isolé
+- `python` seul ne trouve pas les packages installés par uv
+- Solution: Utiliser `uv run python` pour exécuter les migrations
+
+**Fix Appliqué**:
+```diff
+-    python -c "from app.migrations import run_migrations_with_lock; run_migrations_with_lock()"
++    uv run python -c "from app.migrations import run_migrations_with_lock; run_migrations_with_lock()"
+```
+
+### Blocker: Terraform State Lock 🔒
+**Status**: Résolu - lock expiré naturellement
+**Action**: Nouveau commit poussé, pipeline relancée automatiquement
