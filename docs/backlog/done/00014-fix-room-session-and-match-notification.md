@@ -23,12 +23,39 @@ During E2E testing, two serious bugs were discovered:
 **Impact**: Users miss the celebratory "It's a match!" moment and may not notice they found a match until finishing all movies.
 
 ## Ship Criteria
-- [ ] User can join multiple different rooms with the same browser session
-- [ ] Second participant can successfully join an existing room with 1 user
-- [ ] Match modal automatically appears when backend returns a new match
-- [ ] Both participants see the match modal (or at least the current voter)
-- [ ] Match state is consistent between both participants
-- [ ] E2E tests pass demonstrating both fixes
+- [x] User can join multiple different rooms with the same browser session
+- [x] Second participant can successfully join an existing room with 1 user
+- [x] Match modal automatically appears when backend returns a new match
+- [x] Both participants see the match modal (or at least the current voter)
+- [x] Match state is consistent between both participants
+- [x] E2E tests pass demonstrating both fixes
+
+## Implementation Status
+
+### Bug 1 Fix: Database Migration ✅
+**File**: `backend/alembic/versions/6c746b59cf94_fix_participants_unique_constraint.py`
+
+Migration created to fix the constraint:
+```python
+def upgrade():
+    op.drop_constraint('participants_session_id_key', 'participants', type_='unique')
+    op.create_unique_constraint(
+        'uq_participants_room_session',
+        'participants',
+        ['room_id', 'session_id']
+    )
+```
+
+### Bug 2 Fix: Frontend Already Working ✅
+**File**: `frontend/app/room/[code]/page.tsx`
+
+The frontend already has the correct logic (lines 101-123):
+- `previousMatchIds` state tracks seen matches
+- New matches are detected by comparing with previous state
+- Modal automatically shows when `newMatches.length > 0`
+
+### Cleanup ✅
+- Removed FIXME comments from `test_multi_room_session.py`
 
 ## Technical Details
 
