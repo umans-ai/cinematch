@@ -249,9 +249,9 @@ const bobPage = await bobContext.newPage()
 - [x] `env.py` modifié pour fonctionner avec `DATABASE_URL` en local
 - [x] Migration créée et testée sur PostgreSQL local
 - [x] FIXME comments removed from tests
-- [ ] **Pipeline CI verte** (bloqué: state lock Terraform)
-- [ ] **Preview déployée et accessible** (503 à investiguer)
-- [ ] E2E avec 2 sessions distinctes fonctionne sur preview
+- [x] **Pipeline CI verte** ✅
+- [x] **Preview déployée et accessible** ✅ https://demo-pr-60.cinematch.umans.ai
+- [x] E2E avec 2 sessions distinctes fonctionne sur preview ✅
 
 ## Investigation & Fixes (2026-03-17)
 
