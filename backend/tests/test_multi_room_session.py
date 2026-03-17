@@ -56,7 +56,6 @@ class TestMultiRoomParticipation:
             cookies={"session_id": "bob-browser-session"}
         )
 
-        # FIXME: Currently fails with "Room is full" due to session_id UNIQUE constraint
         assert response.status_code == 200, (
             f"Expected Bob to join successfully, but got {response.status_code}: "
             f"{response.json().get('detail', 'Unknown error')}"
@@ -89,7 +88,6 @@ class TestMultiRoomParticipation:
             cookies={"session_id": "same-user-session"}
         )
 
-        # FIXME: Fails due to UNIQUE constraint on session_id
         assert response.status_code == 200, (
             f"User should be able to join new room after previous session. "
             f"Got {response.status_code}: {response.json().get('detail', 'Unknown error')}"
