@@ -115,13 +115,37 @@ sa.UniqueConstraint('session_id')  # ❌ Global unique - BUG!
 
 **Le gap**: Aucun test ne vérifie "migrations + comportement métier" ensemble.
 
+### Fix pour `just dev-local` et migrations
+**Problème**: `alembic.ini` contient `sqlalchemy.url = driver://...` qui ne fonctionne pas en local.
+
+**Solution** (déjà appliquée dans `env.py`):
+```python
+# Set the database URL from environment if available, otherwise from app config
+if os.environ.get("DATABASE_URL"):
+    config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL"))
+elif not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+```
+
+Cela permet à `DATABASE_URL` d'être prioritaire, fonctionnant ainsi en production (via env var) ET en local (via `just dev-local` ou CLI).
+
 ### Bug 2 Status
 Le code frontend a déjà la logique de détection (lignes 101-123 de `page.tsx`):
 - `previousMatchIds` state pour tracker les matchs vus
 - Détection des nouveaux matchs
 - Auto-affichage du modal
 
-À valider si cela fonctionne correctement en conditions réelles.
+### Test Results (2026-03-17)
+
+**Bug 1 - Multi-room session:**
+| Test | Local (fresh DB) | Production |
+|------|------------------|------------|
+| 2 sessions différentes → même room | ✅ | ✅ |
+| Même session → 2 rooms différentes | ✅ | ✅ |
+
+**Conclusion**: Les fonctionnalités marchent sur la prod actuelle, mais **la migration n'existe pas** pour corriger une fresh DB. La prod a probablement été créée manuellement avec le bon schéma.
+
+**Pour passer à done**: Il faut créer la migration `fix_participants_unique_constraint.py` pour garantir que toute nouvelle DB (preview, local, future prod) aura le bon schéma.
 
 ## Corrected Implementation Plan
 
@@ -188,14 +212,16 @@ const bobPage = await bobContext.newPage()
 - Mettre à jour `docs/architecture/decisions/002-migration-testing-approach.md` si besoin
 
 ## Files to Modify
+- `backend/alembic/env.py` - ✅ Fix pour prioriser DATABASE_URL
 - `backend/alembic/versions/XXXX_fix_participants_constraint.py` - NEW
 - `backend/tests/integration/test_room_session.py` - NEW
 - `backend/tests/test_multi_room_session.py` - Remove FIXME comments
 - `backend/tests/test_match_notification.py` - Remove FIXME comments
 
 ## Validation Checklist
+- [x] `env.py` modifié pour fonctionner avec `DATABASE_URL` en local
 - [ ] Test d'intégration fail avant la migration
 - [ ] Test d'intégration passe après la migration
 - [ ] E2E avec 2 sessions distinctes fonctionne
 - [ ] Match modal apparaît quand les 2 participants likent
-- [ ] Aucune modification de `alembic.ini`
+- [ ] Aucune modification de `alembic.ini` (sécurité prod)

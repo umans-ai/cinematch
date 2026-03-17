@@ -13,9 +13,11 @@ from app import models
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the database URL from our app config if not already configured
-# (allows tests to override via Config.set_main_option)
-if not config.get_main_option("sqlalchemy.url"):
+# Set the database URL from environment if available, otherwise from app config
+# This ensures migrations work both in production (env var) and local dev
+if os.environ.get("DATABASE_URL"):
+    config.set_main_option("sqlalchemy.url", os.environ.get("DATABASE_URL"))
+elif not config.get_main_option("sqlalchemy.url"):
     config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # Interpret the config file for Python logging.
