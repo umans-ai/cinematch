@@ -12,7 +12,7 @@ echo "Working directory: $(pwd)"
 if [ "$RUN_MIGRATIONS" = "true" ]; then
     echo ""
     echo ">>> Running database migrations..."
-    python -c "from app.migrations import run_migrations_with_lock; run_migrations_with_lock()"
+    uv run python -c "from app.migrations import run_migrations_with_lock; run_migrations_with_lock()"
     echo ">>> Migrations complete"
 else
     echo ""
