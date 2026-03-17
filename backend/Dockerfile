@@ -13,6 +13,7 @@ RUN uv sync --no-dev
 COPY app/ ./app/
 
 # Copy scripts
+# Cache-bust: 2026-03-17T16:10:00Z - Fix uv run in entrypoint
 COPY scripts/ ./scripts/
 RUN chmod +x scripts/docker-entrypoint.sh
 
