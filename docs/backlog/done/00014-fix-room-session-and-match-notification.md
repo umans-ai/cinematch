@@ -253,6 +253,33 @@ const bobPage = await bobContext.newPage()
 - [x] **Preview déployée et accessible** ✅ https://demo-pr-60.cinematch.umans.ai
 - [x] E2E avec 2 sessions distinctes fonctionne sur preview ✅
 
+## ✅ Tests en Production (2026-03-17)
+
+Tests effectués sur https://demo.cinematch.umans.ai via API + Screenshots Playwright
+
+### Résultats des Tests
+
+| # | Test | API Result | Screenshot |
+|---|------|------------|------------|
+| 1 | Création room | ✅ Code: `8041` | ![Homepage](../ui-previews/01-homepage.png) |
+| 2 | Alice rejoint (session-1) | ✅ ID: 17 | - |
+| 3 | Bob rejoint même room (session-2) | ✅ ID: 18 | - |
+| 4 | Alice crée autre room | ✅ Code: `1876` | - |
+| 5 | Alice rejoint room 2 (même session) | ✅ ID: 19 | - |
+| 6 | Récupération film | ✅ ID: 131 | - |
+| 7 | Alice vote Like | ✅ Vote ID: 61 | - |
+| 8 | Matchs (après 1 vote) | ✅ `[]` (vide) | - |
+| 9 | Bob vote Like | ✅ Vote ID: 62 | - |
+| 10 | **Match détecté** | ✅ "Friends with Benefits" | ![Room](../ui-previews/02-room.png) |
+
+### Screenshots Production
+
+**Homepage** - Écran d'accueil fonctionnel:
+![Homepage](../ui-previews/01-homepage.png)
+
+**Room** - Interface de swipe avec films chargés:
+![Room](../ui-previews/02-room.png)
+
 ## Investigation & Fixes (2026-03-17)
 
 ### Investigation AWS CLI 🔍
