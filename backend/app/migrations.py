@@ -112,12 +112,17 @@ def _stamp_database_if_needed(conn) -> None:
         # Fresh database, let Alembic create everything
         return
 
+    # Check if provider_ids column exists in rooms table
+    result = conn.execute(
+        text(
+            "SELECT EXISTS (SELECT FROM information_schema.columns "
+            "WHERE table_name = 'rooms' AND column_name = 'provider_ids')"
+        )
+    )
+    provider_ids_exists = result.scalar()
+
     # Tables exist but no alembic_version - need to stamp
     logger.info("Database has tables but no alembic_version - stamping with current version...")
-
-    # Get the current head revision
-    # This is the latest migration that adds provider_ids fix
-    head_revision = "b2c3d4e5f6a1"  # ensure_provider_ids_data_integrity
 
     if not alembic_table_exists:
         # Create alembic_version table
@@ -130,10 +135,22 @@ def _stamp_database_if_needed(conn) -> None:
         """)
         )
 
-    # Insert the head revision
-    conn.execute(text(f"INSERT INTO alembic_version (version_num) VALUES ('{head_revision}')"))
-    conn.commit()
-    logger.info(f"Stamped database with version: {head_revision}")
+    if provider_ids_exists:
+        # provider_ids column exists - stamp with latest version
+        head_revision = "b2c3d4e5f6a1"  # ensure_provider_ids_data_integrity
+        conn.execute(text(f"INSERT INTO alembic_version (version_num) VALUES ('{head_revision}')"))
+        conn.commit()
+        logger.info(f"Stamped database with version: {head_revision}")
+    else:
+        # provider_ids column does NOT exist - stamp with version BEFORE that migration
+        # This will allow the 81f153f63751 migration to run and add the column
+        # The prior revision is fix_participants_unique_constraint
+        prior_revision = "6c746b59cf94"
+        conn.execute(text(f"INSERT INTO alembic_version (version_num) VALUES ('{prior_revision}')"))
+        conn.commit()
+        logger.info(
+            f"Stamped database with version: {prior_revision} (will run provider_ids migration)"
+        )
 
 
 def _run_alembic_migrations() -> None:
