@@ -85,6 +85,8 @@ def _stamp_database_if_needed(conn) -> None:
     This handles production databases that were created before Alembic migrations were
     implemented (using SQLAlchemy create_all directly).
     """
+    logger.info("Checking if database needs stamping...")
+
     # Check if alembic_version table exists
     result = conn.execute(
         text(
@@ -93,13 +95,17 @@ def _stamp_database_if_needed(conn) -> None:
         )
     )
     alembic_table_exists = result.scalar()
+    logger.info(f"alembic_version table exists: {alembic_table_exists}")
 
     if alembic_table_exists:
         # Check if there's a version recorded
         result = conn.execute(text("SELECT COUNT(*) FROM alembic_version"))
         version_count = result.scalar()
+        logger.info(f"alembic_version row count: {version_count}")
         if version_count > 0:
-            # Database is already managed by Alembic
+            result = conn.execute(text("SELECT version_num FROM alembic_version"))
+            version = result.scalar()
+            logger.info(f"Database managed by Alembic at version: {version}")
             return
 
     # Check if rooms table exists (indicates database was initialized)
@@ -107,9 +113,10 @@ def _stamp_database_if_needed(conn) -> None:
         text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'rooms')")
     )
     rooms_table_exists = result.scalar()
+    logger.info(f"rooms table exists: {rooms_table_exists}")
 
     if not rooms_table_exists:
-        # Fresh database, let Alembic create everything
+        logger.info("Fresh database - letting Alembic create tables")
         return
 
     # Check if provider_ids column exists in rooms table
