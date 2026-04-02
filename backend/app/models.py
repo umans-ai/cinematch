@@ -1,7 +1,16 @@
 import random
 import string
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -20,7 +29,7 @@ class Room(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
     region = Column(String(2), default="US")  # ISO 3166-1 alpha-2 country code
-    provider_id = Column(Integer, default=8)  # TMDB watch provider ID (8 = Netflix)
+    provider_ids = Column(JSON, default=list)  # List of TMDB watch provider IDs [8] = [Netflix]
 
     participants = relationship("Participant", back_populates="room", cascade="all, delete-orphan")
     votes = relationship("Vote", back_populates="room", cascade="all, delete-orphan")

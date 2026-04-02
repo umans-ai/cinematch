@@ -27,14 +27,14 @@ class TestMovieFiltering:
         # Create room with Netflix (US)
         room1_resp = client.post(
             "/api/v1/rooms",
-            json={"region": "US", "provider_id": 8}  # Netflix
+            json={"region": "US", "provider_ids": [8]}  # Netflix
         )
         room1_code = room1_resp.json()["code"]
 
         # Create room with Disney+ (US)
         room2_resp = client.post(
             "/api/v1/rooms",
-            json={"region": "US", "provider_id": 337}  # Disney+
+            json={"region": "US", "provider_ids": [337]}  # Disney+
         )
         room2_code = room2_resp.json()["code"]
 
@@ -56,9 +56,9 @@ class TestMovieFiltering:
         assert len(movies1) > 0, "Netflix room should have movies"
         assert len(movies2) > 0, "Disney+ room should have movies"
 
-        # The room info should reflect the correct provider
-        assert data1["room"]["provider_id"] == 8  # Netflix
-        assert data2["room"]["provider_id"] == 337  # Disney+
+        # The room info should reflect the correct providers
+        assert data1["room"]["provider_ids"] == [8]  # Netflix
+        assert data2["room"]["provider_ids"] == [337]  # Disney+
 
     def test_room_with_different_regions_gets_different_movies(self, client):
         """
@@ -68,14 +68,14 @@ class TestMovieFiltering:
         # Create room with Netflix (US)
         room1_resp = client.post(
             "/api/v1/rooms",
-            json={"region": "US", "provider_id": 8}
+            json={"region": "US", "provider_ids": [8]}
         )
         room1_code = room1_resp.json()["code"]
 
         # Create room with Netflix (FR)
         room2_resp = client.post(
             "/api/v1/rooms",
-            json={"region": "FR", "provider_id": 8}
+            json={"region": "FR", "provider_ids": [8]}
         )
         room2_code = room2_resp.json()["code"]
 
@@ -102,7 +102,7 @@ class TestMovieFiltering:
         # Create a room
         room_resp = client.post(
             "/api/v1/rooms",
-            json={"region": "US", "provider_id": 8}
+            json={"region": "US", "provider_ids": [8]}
         )
         room_code = room_resp.json()["code"]
 
@@ -123,7 +123,7 @@ class TestMovieFiltering:
     def test_default_room_uses_us_netflix(self, client):
         """
         When creating a room without specifying region/provider,
-        defaults should be US and Netflix (8).
+        defaults should be US and Netflix ([8]).
         """
         # Create room without region/provider
         room_resp = client.post("/api/v1/rooms")
@@ -131,7 +131,7 @@ class TestMovieFiltering:
 
         # Check defaults
         assert room_resp.json()["region"] == "US"
-        assert room_resp.json()["provider_id"] == 8
+        assert room_resp.json()["provider_ids"] == [8]
 
         # Join and get movies
         client.post(f"/api/v1/rooms/{room_code}/join", json={"name": "Alice"})
@@ -139,5 +139,5 @@ class TestMovieFiltering:
 
         data = movies_resp.json()
         assert data["room"]["region"] == "US"
-        assert data["room"]["provider_id"] == 8
+        assert data["room"]["provider_ids"] == [8]
         assert len(data.get("movies", [])) > 0

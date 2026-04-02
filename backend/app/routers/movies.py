@@ -30,8 +30,11 @@ with open(_MOVIES_FILE) as f:
     STATIC_MOVIES: list[dict] = json.load(f)
 
 
-def _seed_static_movies(db: Session, region: str = "US", provider_id: int = 8) -> None:
+def _seed_static_movies(
+    db: Session, region: str = "US", provider_ids: list[int] | None = None
+) -> None:
     """Seed the database with static movies if empty (fallback when no TMDB)."""
+    provider_ids = provider_ids or [8]
     if db.query(Movie).count() == 0:
         # First time - create all movies
         for movie_data in STATIC_MOVIES:
@@ -39,12 +42,14 @@ def _seed_static_movies(db: Session, region: str = "US", provider_id: int = 8) -
             db.add(movie)
             db.commit()
             db.refresh(movie)
-            # Record availability for the room's region/provider
-            _record_movie_availability(db, movie, region, provider_id)
+            # Record availability for the room's region/providers
+            for provider_id in provider_ids:
+                _record_movie_availability(db, movie, region, provider_id)
     else:
-        # Movies already exist - ensure availability is recorded for this region/provider
+        # Movies already exist - ensure availability is recorded for this region/providers
         for movie in db.query(Movie).all():
-            _record_movie_availability(db, movie, region, provider_id)
+            for provider_id in provider_ids:
+                _record_movie_availability(db, movie, region, provider_id)
 
 
 def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
@@ -146,15 +151,15 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
     """Ensure room has enough movies in its pool by fetching from TMDB or using static fallback."""
     # Get room's region/provider preferences
     region: str = str(room.region)
-    provider_id: int = int(room.provider_id) if room.provider_id else 8  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
 
-    # Get count of movies available for this room's region/provider that haven't been voted on
+    # Get count of movies available for this room's region/providers that haven't been voted on
     voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
     available_movie_ids = (
         db.query(MovieAvailability.movie_id)
         .filter(
             MovieAvailability.region == region,
-            MovieAvailability.provider_id == provider_id,
+            MovieAvailability.provider_id.in_(provider_ids),
         )
         .subquery()
     )
@@ -170,7 +175,7 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
 
     # If TMDB API key is not available, use static movies as fallback
     if not TMDB_API_KEY:
-        _seed_static_movies(db, region, provider_id)
+        _seed_static_movies(db, region, provider_ids)
         return
 
     # Need to fetch more movies
@@ -180,19 +185,21 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
     fetched_count = 0
     for page in range(1, pages_needed + 1):
         try:
-            tmdb_data = discover_movies(db, region=region, provider_id=provider_id, page=page)
+            tmdb_data = discover_movies(db, region=region, provider_ids=provider_ids, page=page)
             results = tmdb_data.get("results", [])
 
             for tmdb_movie in results:
                 # Check if movie already exists
                 existing = db.query(Movie).filter(Movie.tmdb_id == tmdb_movie["id"]).first()
                 if existing:
-                    # Record availability even if movie exists
-                    _record_movie_availability(db, existing, region, provider_id)
+                    # Record availability for each provider
+                    for provider_id in provider_ids:
+                        _record_movie_availability(db, existing, region, provider_id)
                 else:
-                    # Create new movie and record availability
+                    # Create new movie and record availability for each provider
                     movie = _tmdb_to_movie(db, tmdb_movie)
-                    _record_movie_availability(db, movie, region, provider_id)
+                    for provider_id in provider_ids:
+                        _record_movie_availability(db, movie, region, provider_id)
                     fetched_count += 1
 
                 if fetched_count >= needed:
@@ -207,7 +214,7 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
 class RoomInfo(BaseModel):
     code: str
     region: str
-    provider_id: int
+    provider_ids: List[int]
 
 
 class MoviesWithRoomResponse(BaseModel):
@@ -228,9 +235,9 @@ def get_movies(
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # Get room's region/provider for filtering
+    # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_id: int = int(room.provider_id) if room.provider_id else 8  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]
 
     # If refresh requested, fetch additional movies beyond current pool
     if refresh:
@@ -240,7 +247,7 @@ def get_movies(
             db.query(MovieAvailability.movie_id)
             .filter(
                 MovieAvailability.region == region,
-                MovieAvailability.provider_id == provider_id,
+                MovieAvailability.provider_id.in_(provider_ids),
             )
             .subquery()
         )
@@ -256,13 +263,13 @@ def get_movies(
     # Ensure we have movies in the pool
     _ensure_movies_in_pool(db, room)
 
-    # Get movies available for this room's region/provider that haven't been voted on yet
+    # Get movies available for this room's region/providers that haven't been voted on yet
     voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
     available_movie_ids = (
         db.query(MovieAvailability.movie_id)
         .filter(
             MovieAvailability.region == region,
-            MovieAvailability.provider_id == provider_id,
+            MovieAvailability.provider_id.in_(provider_ids),
         )
         .subquery()
     )
@@ -282,7 +289,7 @@ def get_movies(
         room=RoomInfo(
             code=str(room.code),
             region=str(room.region),
-            provider_id=int(room.provider_id) if room.provider_id else 8,  # type: ignore[arg-type]
+            provider_ids=provider_ids,
         ),
     )
 
@@ -301,9 +308,9 @@ def get_unvoted_movies(
     # Ensure we have movies
     _ensure_movies_in_pool(db, room)
 
-    # Get room's region/provider for filtering
+    # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_id: int = int(room.provider_id) if room.provider_id else 8  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]
 
     # Get movies this participant hasn't voted on yet, filtered by availability
     voted_movie_ids = [
@@ -313,7 +320,7 @@ def get_unvoted_movies(
         db.query(MovieAvailability.movie_id)
         .filter(
             MovieAvailability.region == region,
-            MovieAvailability.provider_id == provider_id,
+            MovieAvailability.provider_id.in_(provider_ids),
         )
         .subquery()
     )

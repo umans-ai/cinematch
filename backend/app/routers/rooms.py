@@ -22,9 +22,9 @@ def get_session_id(request: Request) -> str:
 def create_room(room_data: RoomCreate | None = None, db: Session = Depends(get_db)):
     max_attempts = 10
     region = room_data.region if room_data else "US"
-    provider_id = room_data.provider_id if room_data else 8
+    provider_ids = room_data.provider_ids if room_data else [8]
     for _ in range(max_attempts):
-        room = Room(region=region, provider_id=provider_id)
+        room = Room(region=region, provider_ids=provider_ids)
         db.add(room)
         try:
             db.commit()
