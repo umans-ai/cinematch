@@ -13,14 +13,14 @@ export default function Home() {
   const [step, setStep] = useState<Step>("name");
   const [name, setName] = useState("");
   const [roomCode, setRoomCode] = useState("");
-  const [selectedProviderId, setSelectedProviderId] = useState<number | null>(null);
+  const [selectedProviderIds, setSelectedProviderIds] = useState<number[]>([8]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
 
   const createRoom = async () => {
-    if (!name.trim() || !selectedProviderId || !selectedRegion) return;
+    if (!name.trim() || selectedProviderIds.length === 0 || !selectedRegion) return;
     setIsCreating(true);
 
     try {
@@ -29,7 +29,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           region: selectedRegion,
-          provider_id: selectedProviderId,
+          provider_ids: selectedProviderIds,
         }),
       });
       const data = await response.json();
@@ -70,7 +70,7 @@ export default function Home() {
     }
   };
 
-  const canCreate = name.trim() && selectedProviderId && selectedRegion;
+  const canCreate = name.trim() && selectedProviderIds.length > 0 && selectedRegion;
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
@@ -136,15 +136,15 @@ export default function Home() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Choose your streaming service</h2>
+                <h2 className="text-lg font-semibold">Choose your streaming services</h2>
                 <p className="text-sm text-muted-foreground">
-                  Select the platform you want to watch on
+                  Select all platforms you want to watch on
                 </p>
               </div>
 
               <PlatformSelector
-                selectedProviderId={selectedProviderId}
-                onSelect={setSelectedProviderId}
+                selectedProviderIds={selectedProviderIds}
+                onSelect={setSelectedProviderIds}
               />
 
               <div className="space-y-2">

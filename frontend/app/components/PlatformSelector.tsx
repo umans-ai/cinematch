@@ -7,8 +7,8 @@ interface Provider {
 }
 
 interface PlatformSelectorProps {
-  selectedProviderId: number | null;
-  onSelect: (providerId: number) => void;
+  selectedProviderIds: number[];
+  onSelect: (providerIds: number[]) => void;
 }
 
 // Simple colored icons for each platform
@@ -57,7 +57,7 @@ const providerIcons: Record<number, React.ReactNode> = {
   15: <HuluIcon />,      // Hulu
 };
 
-export default function PlatformSelector({ selectedProviderId, onSelect }: PlatformSelectorProps) {
+export default function PlatformSelector({ selectedProviderIds, onSelect }: PlatformSelectorProps) {
   // Static list of providers matching the backend
   const providers: Provider[] = [
     { id: 8, name: "Netflix", logo_url: "" },
@@ -68,22 +68,58 @@ export default function PlatformSelector({ selectedProviderId, onSelect }: Platf
     { id: 15, name: "Hulu", logo_url: "" },
   ];
 
+  const toggleProvider = (providerId: number) => {
+    if (selectedProviderIds.includes(providerId)) {
+      // Don't allow deselecting the last provider
+      if (selectedProviderIds.length > 1) {
+        onSelect(selectedProviderIds.filter((id) => id !== providerId));
+      }
+    } else {
+      onSelect([...selectedProviderIds, providerId]);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {providers.map((provider) => (
-        <button
-          key={provider.id}
-          onClick={() => onSelect(provider.id)}
-          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
-            selectedProviderId === provider.id
-              ? "border-primary bg-primary/5"
-              : "border-input hover:border-primary/50"
-          }`}
-        >
-          {providerIcons[provider.id]}
-          <span className="font-medium text-sm">{provider.name}</span>
-        </button>
-      ))}
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {providers.map((provider) => {
+          const isSelected = selectedProviderIds.includes(provider.id);
+          return (
+            <button
+              key={provider.id}
+              onClick={() => toggleProvider(provider.id)}
+              className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                isSelected
+                  ? "border-primary bg-primary/5"
+                  : "border-input hover:border-primary/50"
+              }`}
+            >
+              {providerIcons[provider.id]}
+              <span className="font-medium text-sm">{provider.name}</span>
+              {isSelected && (
+                <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <svg
+                    className="w-3 h-3 text-primary-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        {selectedProviderIds.length} platform{selectedProviderIds.length !== 1 ? "s" : ""} selected
+      </p>
     </div>
   );
 }

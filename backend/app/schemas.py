@@ -1,12 +1,21 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class RoomCreate(BaseModel):
     region: str = "US"
-    provider_id: int = 8
+    provider_ids: List[int] = [8]
+
+    @field_validator("provider_ids")
+    @classmethod
+    def validate_provider_ids(cls, v: List[int]) -> List[int]:
+        if not v:
+            raise ValueError("At least one provider must be selected")
+        if len(v) > 5:
+            raise ValueError("Maximum 5 providers allowed")
+        return v
 
 
 class RoomResponse(BaseModel):
@@ -15,7 +24,7 @@ class RoomResponse(BaseModel):
     created_at: datetime
     is_active: bool
     region: str
-    provider_id: int
+    provider_ids: List[int]
 
     class Config:
         from_attributes = True

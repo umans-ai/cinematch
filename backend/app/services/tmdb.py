@@ -85,11 +85,15 @@ def _make_request(endpoint: str, params: dict | None = None) -> dict:
 def discover_movies(
     db: Session,
     region: str = "US",
-    provider_id: int | None = None,
+    provider_ids: list[int] | None = None,
     page: int = 1,
 ) -> dict:
-    """Discover movies with optional region and provider filters."""
-    cache_key = f"discover:{region}:{provider_id}:{page}"
+    """Discover movies with optional region and provider filters.
+
+    Supports multiple providers using OR logic (movies available on ANY selected provider).
+    """
+    provider_key = ",".join(str(p) for p in provider_ids) if provider_ids else "none"
+    cache_key = f"discover:{region}:{provider_key}:{page}"
 
     # Check cache first
     cached = get_cache(db, cache_key)
@@ -105,8 +109,9 @@ def discover_movies(
         "include_video": False,
     }
 
-    if provider_id:
-        params["with_watch_providers"] = provider_id
+    if provider_ids:
+        # TMDB uses pipe (|) for OR logic between providers
+        params["with_watch_providers"] = "|".join(str(p) for p in provider_ids)
         params["watch_region"] = region
 
     data = _make_request("/discover/movie", params)
