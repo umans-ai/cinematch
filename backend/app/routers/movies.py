@@ -237,7 +237,7 @@ def get_movies(
 
     # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
 
     # If refresh requested, fetch additional movies beyond current pool
     if refresh:
@@ -310,7 +310,7 @@ def get_unvoted_movies(
 
     # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
 
     # Get movies this participant hasn't voted on yet, filtered by availability
     voted_movie_ids = [
