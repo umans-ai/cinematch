@@ -50,17 +50,32 @@ def upgrade() -> None:
         )
 
     # Migrate existing data: convert provider_id to JSON array
-    op.execute(
-        text(
+    if dialect == "postgresql":
+        # PostgreSQL uses json_build_array
+        op.execute(
+            text(
+                """
+            UPDATE rooms
+            SET provider_ids = CASE
+                WHEN provider_id IS NOT NULL THEN json_build_array(provider_id)
+                ELSE '[8]'::json
+            END
             """
-        UPDATE rooms
-        SET provider_ids = CASE
-            WHEN provider_id IS NOT NULL THEN json_array(provider_id)
-            ELSE '[8]'
-        END
-        """
+            )
         )
-    )
+    else:
+        # SQLite uses json_array
+        op.execute(
+            text(
+                """
+            UPDATE rooms
+            SET provider_ids = CASE
+                WHEN provider_id IS NOT NULL THEN json_array(provider_id)
+                ELSE '[8]'
+            END
+            """
+            )
+        )
 
 
 def downgrade() -> None:
