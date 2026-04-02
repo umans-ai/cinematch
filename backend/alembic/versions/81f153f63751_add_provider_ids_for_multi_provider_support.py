@@ -51,7 +51,7 @@ def upgrade() -> None:
 
     # Migrate existing data: convert provider_id to JSON array
     if dialect == "postgresql":
-        # PostgreSQL uses json_build_array
+        # PostgreSQL uses json_build_array (returns json type)
         op.execute(
             text(
                 """

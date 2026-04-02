@@ -26,11 +26,12 @@ def upgrade() -> None:
     if dialect == "postgresql":
         # For PostgreSQL: ensure provider_ids is set correctly
         # This fixes any rooms where provider_ids might be null or invalid
+        # Use json_typeof to check for null JSON values (json = json comparison not supported)
         op.execute(
             sa.text("""
                 UPDATE rooms
                 SET provider_ids = json_build_array(provider_id)
-                WHERE provider_ids IS NULL OR provider_ids = 'null'::json
+                WHERE provider_ids IS NULL OR json_typeof(provider_ids) = 'null'
             """)
         )
     else:
