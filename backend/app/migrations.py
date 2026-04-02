@@ -106,6 +106,29 @@ def _stamp_database_if_needed(conn) -> None:
             result = conn.execute(text("SELECT version_num FROM alembic_version"))
             version = result.scalar()
             logger.info(f"Database managed by Alembic at version: {version}")
+
+            # Check if provider_ids column exists - it might not even if alembic says it should
+            result = conn.execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM information_schema.columns "
+                    "WHERE table_name = 'rooms' AND column_name = 'provider_ids')"
+                )
+            )
+            provider_ids_exists = result.scalar()
+            logger.info(f"provider_ids column exists: {provider_ids_exists}")
+
+            if not provider_ids_exists:
+                # Column doesn't exist but alembic says we're at a version that should have it
+                # Reset to prior version so the migration will run
+                logger.warning(
+                    f"Version is {version} but provider_ids column missing! "
+                    "Resetting to prior version to re-run migration."
+                )
+                prior_revision = "6c746b59cf94"
+                conn.execute(text(f"UPDATE alembic_version SET version_num = '{prior_revision}'"))
+                conn.commit()
+                logger.info(f"Reset alembic_version to: {prior_revision}")
+
             return
 
     # Check if rooms table exists (indicates database was initialized)
