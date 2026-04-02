@@ -83,7 +83,8 @@ def _stamp_database_if_needed(conn) -> None:
     # Check if alembic_version table exists
     result = conn.execute(
         text(
-            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'alembic_version')"
+            "SELECT EXISTS (SELECT FROM information_schema.tables "
+            "WHERE table_name = 'alembic_version')"
         )
     )
     alembic_table_exists = result.scalar()
