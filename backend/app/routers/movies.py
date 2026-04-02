@@ -151,7 +151,7 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
     """Ensure room has enough movies in its pool by fetching from TMDB or using static fallback."""
     # Get room's region/provider preferences
     region: str = str(room.region)
-    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore
 
     # Get count of movies available for this room's region/providers that haven't been voted on
     voted_movie_ids = db.query(Vote.movie_id).filter(Vote.room_id == room.id).subquery()
@@ -237,7 +237,7 @@ def get_movies(
 
     # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore
 
     # If refresh requested, fetch additional movies beyond current pool
     if refresh:
@@ -310,7 +310,7 @@ def get_unvoted_movies(
 
     # Get room's region/providers for filtering
     region: str = str(room.region)
-    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore[arg-type]
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore
 
     # Get movies this participant hasn't voted on yet, filtered by availability
     voted_movie_ids = [
