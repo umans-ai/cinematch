@@ -12,6 +12,10 @@ RUN uv sync --no-dev
 # Copy app code separately (changes often)
 COPY app/ ./app/
 
+# Copy alembic configuration
+COPY alembic.ini ./
+COPY alembic/ ./alembic/
+
 # Copy scripts
 # Cache-bust: 2026-03-17T16:10:00Z - Fix uv run in entrypoint
 COPY scripts/ ./scripts/
