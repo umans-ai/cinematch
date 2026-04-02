@@ -6,6 +6,11 @@ import os
 import alembic.config
 from sqlalchemy import create_engine, text
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 # Unique advisory lock ID for CineMatch (arbitrary, just needs to be unique)
@@ -180,8 +185,4 @@ def check_migration_status() -> dict:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
     run_migrations_with_lock()
