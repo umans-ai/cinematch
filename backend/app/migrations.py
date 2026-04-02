@@ -64,12 +64,70 @@ def run_migrations_with_lock(max_wait_seconds: int = 300) -> None:
 
         try:
             logger.info("Running Alembic migrations...")
+            _stamp_database_if_needed(conn)
             _run_alembic_migrations()
             logger.info("Migrations completed successfully")
         finally:
             # Always release lock, even if migration fails
             conn.execute(text(f"SELECT pg_advisory_unlock({MIGRATION_LOCK_ID})"))
             logger.info("Released migration lock")
+
+
+def _stamp_database_if_needed(conn) -> None:
+    """
+    Stamp database with current Alembic version if tables exist but alembic_version doesn't.
+
+    This handles production databases that were created before Alembic migrations were
+    implemented (using SQLAlchemy create_all directly).
+    """
+    # Check if alembic_version table exists
+    result = conn.execute(
+        text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'alembic_version')"
+        )
+    )
+    alembic_table_exists = result.scalar()
+
+    if alembic_table_exists:
+        # Check if there's a version recorded
+        result = conn.execute(text("SELECT COUNT(*) FROM alembic_version"))
+        version_count = result.scalar()
+        if version_count > 0:
+            # Database is already managed by Alembic
+            return
+
+    # Check if rooms table exists (indicates database was initialized)
+    result = conn.execute(
+        text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'rooms')")
+    )
+    rooms_table_exists = result.scalar()
+
+    if not rooms_table_exists:
+        # Fresh database, let Alembic create everything
+        return
+
+    # Tables exist but no alembic_version - need to stamp
+    logger.info("Database has tables but no alembic_version - stamping with current version...")
+
+    # Get the current head revision
+    # This is the latest migration that adds provider_ids fix
+    head_revision = "b2c3d4e5f6a1"  # ensure_provider_ids_data_integrity
+
+    if not alembic_table_exists:
+        # Create alembic_version table
+        conn.execute(
+            text("""
+            CREATE TABLE alembic_version (
+                version_num VARCHAR(32) NOT NULL,
+                CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+            )
+        """)
+        )
+
+    # Insert the head revision
+    conn.execute(text(f"INSERT INTO alembic_version (version_num) VALUES ('{head_revision}')"))
+    conn.commit()
+    logger.info(f"Stamped database with version: {head_revision}")
 
 
 def _run_alembic_migrations() -> None:
