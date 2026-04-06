@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface Provider {
   id: number;
   name: string;
@@ -8,45 +10,86 @@ interface Provider {
 
 interface ProviderBadgesProps {
   providers: Provider[];
-  maxVisible?: number;
 }
 
-export default function ProviderBadges({ providers, maxVisible = 3 }: ProviderBadgesProps) {
+export default function ProviderBadges({ providers }: ProviderBadgesProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   if (!providers || providers.length === 0) {
     return null;
   }
 
-  const visibleProviders = providers.slice(0, maxVisible);
-  const remainingCount = providers.length - maxVisible;
+  const primaryProvider = providers[0];
+  const additionalCount = providers.length - 1;
 
   return (
-    <div className="flex items-center gap-1">
-      {visibleProviders.map((provider) => (
+    <div className="relative">
+      <div
+        className="flex items-center gap-1.5"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {/* Primary provider - larger badge with logo */}
         <div
-          key={provider.id}
-          className="flex items-center justify-center w-6 h-6 rounded-full bg-white/90 shadow-sm overflow-hidden"
-          title={provider.name}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/95 shadow-md"
+          title={primaryProvider.name}
         >
-          <img
-            src={provider.logo_url}
-            alt={provider.name}
-            className="w-5 h-5 object-contain"
-            onError={(e) => {
-              // Fallback to first letter if image fails
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              const parent = target.parentElement;
-              if (parent) {
-                parent.textContent = provider.name.charAt(0).toUpperCase();
-                parent.classList.add("text-xs", "font-bold", "text-gray-700");
-              }
-            }}
-          />
+          <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+            <img
+              src={primaryProvider.logo_url}
+              alt={primaryProvider.name}
+              className="w-4 h-4 object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.textContent = primaryProvider.name.charAt(0).toUpperCase();
+                  parent.classList.add("text-xs", "font-bold", "text-gray-600");
+                }
+              }}
+            />
+          </div>
+          <span className="text-xs font-semibold text-gray-800">{primaryProvider.name}</span>
         </div>
-      ))}
-      {remainingCount > 0 && (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-black/60 text-white text-xs font-medium">
-          +{remainingCount}
+
+        {/* Additional count badge */}
+        {additionalCount > 0 && (
+          <div className="flex items-center justify-center px-2 py-1 rounded-full bg-black/70 text-white text-xs font-medium backdrop-blur-sm">
+            +{additionalCount}
+          </div>
+        )}
+      </div>
+
+      {/* Tooltip showing all providers */}
+      {showTooltip && additionalCount > 0 && (
+        <div className="absolute top-full right-0 mt-2 z-50">
+          <div className="bg-black/90 backdrop-blur-md rounded-xl p-3 shadow-xl border border-white/10 min-w-[160px]">
+            <p className="text-xs text-white/60 mb-2">Available on:</p>
+            <div className="space-y-2">
+              {providers.map((provider) => (
+                <div key={provider.id} className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex items-center justify-center">
+                    <img
+                      src={provider.logo_url}
+                      alt={provider.name}
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.textContent = provider.name.charAt(0).toUpperCase();
+                          parent.classList.add("text-xs", "font-bold", "text-gray-600");
+                        }
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm text-white font-medium">{provider.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
