@@ -3,6 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
+import ProviderBadges from "../../components/ProviderBadges";
+
+interface Provider {
+  id: number;
+  name: string;
+  logo_url: string;
+}
 
 interface Movie {
   id: number;
@@ -14,12 +21,13 @@ interface Movie {
   backdrop_url?: string;
   rating?: number; // Stored as integer (e.g., 87 for 8.7)
   trailer_key?: string;
+  available_providers: Provider[];
 }
 
 interface RoomInfo {
   code: string;
   region: string;
-  provider_id: number;
+  provider_ids: number[];
 }
 
 interface Match {
@@ -38,16 +46,6 @@ function parseGenres(genreString?: string): string[] {
   if (!genreString) return [];
   return genreString.split(",").map(g => g.trim()).filter(g => g.length > 0);
 }
-
-// Provider info lookup
-const PROVIDER_INFO: Record<number, { name: string; color: string }> = {
-  8: { name: "Netflix", color: "bg-red-600" },
-  9: { name: "Prime", color: "bg-blue-500" },
-  337: { name: "Disney+", color: "bg-blue-900" },
-  384: { name: "HBO Max", color: "bg-purple-600" },
-  350: { name: "Apple TV+", color: "bg-gray-800" },
-  15: { name: "Hulu", color: "bg-green-500" },
-};
 
 export default function RoomPage() {
   const params = useParams();
@@ -357,12 +355,10 @@ export default function RoomPage() {
                 </div>
               )}
 
-              {/* Platform Badge */}
-              {room && PROVIDER_INFO[room.provider_id] && (
+              {/* Provider Badges */}
+              {currentMovie?.available_providers && currentMovie.available_providers.length > 0 && (
                 <div className="absolute top-3 right-3">
-                  <div className={`px-2 py-1 rounded-full ${PROVIDER_INFO[room.provider_id].color} text-white text-xs font-medium shadow-lg`}>
-                    {PROVIDER_INFO[room.provider_id].name}
-                  </div>
+                  <ProviderBadges providers={currentMovie.available_providers} maxVisible={3} />
                 </div>
               )}
 

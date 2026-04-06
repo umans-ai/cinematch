@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Movie, MovieAvailability, Room, Vote
-from ..schemas import MovieResponse
+from ..routers.providers import PROVIDERS
+from ..schemas import MovieResponse, ProviderInfo
 from ..services.tmdb import (
     TMDB_API_KEY,
     discover_movies,
@@ -145,6 +146,60 @@ def _record_movie_availability(db: Session, movie: Movie, region: str, provider_
         )
         db.add(availability)
         db.commit()
+
+
+def _get_movie_providers(
+    db: Session, movie: Movie, region: str, room_provider_ids: list[int]
+) -> list[ProviderInfo]:
+    """Get available providers for a movie in a specific region, filtered by room's providers."""
+    # Query which providers from the room's list are available for this movie
+    available_provider_ids = (
+        db.query(MovieAvailability.provider_id)
+        .filter(
+            MovieAvailability.movie_id == movie.id,
+            MovieAvailability.region == region,
+            MovieAvailability.provider_id.in_(room_provider_ids),
+        )
+        .all()
+    )
+
+    # Build provider info list
+    providers = []
+    base_url = "https://image.tmdb.org/t/p/original"
+    for (provider_id,) in available_provider_ids:
+        # Find provider info from PROVIDERS dict
+        for key, data in PROVIDERS.items():
+            if data["id"] == provider_id:
+                providers.append(
+                    ProviderInfo(
+                        id=provider_id,
+                        name=str(data["name"]),
+                        logo_url=f"{base_url}{data['logo_path']}",
+                    )
+                )
+                break
+
+    return providers
+
+
+def _movie_to_response(
+    db: Session, movie: Movie, region: str, provider_ids: list[int]
+) -> dict:
+    """Convert a Movie model to a MovieResponse dict with provider info."""
+    providers = _get_movie_providers(db, movie, region, provider_ids)
+
+    return {
+        "id": movie.id,
+        "title": movie.title,
+        "year": movie.year,
+        "genre": movie.genre,
+        "poster_url": movie.poster_url,
+        "backdrop_url": movie.backdrop_url,
+        "description": movie.description,
+        "rating": movie.rating / 10 if movie.rating else None,
+        "trailer_key": movie.trailer_key,
+        "available_providers": providers,
+    }
 
 
 def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_POOL) -> None:
@@ -284,8 +339,11 @@ def get_movies(
         .all()
     )
 
+    # Build response with provider info for each movie
+    movie_responses = [_movie_to_response(db, m, region, provider_ids) for m in movies]
+
     return MoviesWithRoomResponse(
-        movies=[MovieResponse.model_validate(m) for m in movies],
+        movies=[MovieResponse(**m) for m in movie_responses],
         room=RoomInfo(
             code=str(room.code),
             region=str(room.region),
@@ -331,11 +389,18 @@ def get_unvoted_movies(
         .filter(~Movie.id.in_(voted_movie_ids))
         .all()
     )
-    return movies
+
+    # Build response with provider info for each movie
+    movie_responses = [_movie_to_response(db, m, region, provider_ids) for m in movies]
+    return [MovieResponse(**m) for m in movie_responses]
 
 
 @router.get("/{movie_id}", response_model=MovieResponse)
-def get_movie_detail(movie_id: int, db: Session = Depends(get_db)):
+def get_movie_detail(
+    movie_id: int,
+    code: str | None = Query(None, description="Room code for provider context"),
+    db: Session = Depends(get_db),
+):
     """Get detailed info for a single movie."""
     movie = db.query(Movie).filter(Movie.id == movie_id).first()
     if not movie:
@@ -359,4 +424,31 @@ def get_movie_detail(movie_id: int, db: Session = Depends(get_db)):
             # Ignore errors, return cached data
             pass
 
-    return movie
+    # Determine region and provider_ids for provider lookup
+    region = "US"
+    provider_ids: list[int] = []
+
+    if code:
+        room = db.query(Room).filter(Room.code == code).first()
+        if room:
+            region = str(room.region)
+            provider_ids = room.provider_ids if room.provider_ids else []  # type: ignore
+    else:
+        # No room context - get all available providers for this movie
+        all_avail = (
+            db.query(MovieAvailability)
+            .filter(MovieAvailability.movie_id == movie.id)
+            .all()
+        )
+        # Use region from first availability record
+        if all_avail:
+            region = all_avail[0].region
+            provider_ids = list(set(a.provider_id for a in all_avail))
+
+    # If still no provider_ids, use defaults
+    if not provider_ids:
+        provider_ids = [8]  # Default to Netflix
+
+    # Build response with provider info
+    response_data = _movie_to_response(db, movie, region, provider_ids)
+    return MovieResponse(**response_data)

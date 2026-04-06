@@ -43,6 +43,15 @@ class ParticipantResponse(BaseModel):
         from_attributes = True
 
 
+class ProviderInfo(BaseModel):
+    id: int
+    name: str
+    logo_url: str
+
+    class Config:
+        from_attributes = True
+
+
 class MovieResponse(BaseModel):
     id: int
     title: str
@@ -53,6 +62,7 @@ class MovieResponse(BaseModel):
     description: Optional[str] = None
     rating: Optional[float] = None  # TMDB vote_average
     trailer_key: Optional[str] = None  # YouTube trailer key
+    available_providers: List[ProviderInfo] = []  # Providers where movie is available
 
     class Config:
         from_attributes = True
