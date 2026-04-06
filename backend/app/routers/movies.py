@@ -182,9 +182,7 @@ def _get_movie_providers(
     return providers
 
 
-def _movie_to_response(
-    db: Session, movie: Movie, region: str, provider_ids: list[int]
-) -> dict:
+def _movie_to_response(db: Session, movie: Movie, region: str, provider_ids: list[int]) -> dict:
     """Convert a Movie model to a MovieResponse dict with provider info."""
     providers = _get_movie_providers(db, movie, region, provider_ids)
 
@@ -435,20 +433,16 @@ def get_movie_detail(
             provider_ids = room.provider_ids if room.provider_ids else []  # type: ignore
     else:
         # No room context - get all available providers for this movie
-        all_avail = (
-            db.query(MovieAvailability)
-            .filter(MovieAvailability.movie_id == movie.id)
-            .all()
-        )
+        all_avail = db.query(MovieAvailability).filter(MovieAvailability.movie_id == movie.id).all()
         # Use region from first availability record
         if all_avail:
-            region = all_avail[0].region
-            provider_ids = list(set(a.provider_id for a in all_avail))
+            region = str(all_avail[0].region)
+            provider_ids = list({int(a.provider_id) for a in all_avail})  # type: ignore
 
     # If still no provider_ids, use defaults
     if not provider_ids:
         provider_ids = [8]  # Default to Netflix
 
     # Build response with provider info
-    response_data = _movie_to_response(db, movie, region, provider_ids)
+    response_data = _movie_to_response(db, movie, str(region), provider_ids)
     return MovieResponse(**response_data)
