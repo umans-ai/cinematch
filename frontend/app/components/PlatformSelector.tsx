@@ -68,13 +68,15 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
     { id: 15, name: "Hulu", logo_url: "" },
   ];
 
+  const MAX_PROVIDERS = 5;
+
   const toggleProvider = (providerId: number) => {
     if (selectedProviderIds.includes(providerId)) {
       // Don't allow deselecting the last provider
       if (selectedProviderIds.length > 1) {
         onSelect(selectedProviderIds.filter((id) => id !== providerId));
       }
-    } else {
+    } else if (selectedProviderIds.length < MAX_PROVIDERS) {
       onSelect([...selectedProviderIds, providerId]);
     }
   };
@@ -88,10 +90,13 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
             <button
               key={provider.id}
               onClick={() => toggleProvider(provider.id)}
+              disabled={!isSelected && selectedProviderIds.length >= MAX_PROVIDERS}
               className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
                 isSelected
                   ? "border-primary bg-primary/5"
-                  : "border-input hover:border-primary/50"
+                  : selectedProviderIds.length >= MAX_PROVIDERS
+                    ? "border-input opacity-50 cursor-not-allowed"
+                    : "border-input hover:border-primary/50"
               }`}
             >
               {providerIcons[provider.id]}
@@ -118,7 +123,10 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
         })}
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        {selectedProviderIds.length} platform{selectedProviderIds.length !== 1 ? "s" : ""} selected
+        {selectedProviderIds.length} of {MAX_PROVIDERS} platforms selected
+        {selectedProviderIds.length >= MAX_PROVIDERS && (
+          <span className="text-amber-500 block mt-1">Maximum reached</span>
+        )}
       </p>
     </div>
   );
