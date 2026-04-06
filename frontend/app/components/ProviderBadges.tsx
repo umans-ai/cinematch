@@ -39,15 +39,6 @@ export default function ProviderBadges({ providers }: ProviderBadgesProps) {
               src={primaryProvider.logo_url}
               alt={primaryProvider.name}
               className="w-4 h-4 object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.textContent = primaryProvider.name.charAt(0).toUpperCase();
-                  parent.classList.add("text-xs", "font-bold", "text-gray-600");
-                }
-              }}
             />
           </div>
           <span className="text-xs font-semibold text-gray-800">{primaryProvider.name}</span>
@@ -74,15 +65,6 @@ export default function ProviderBadges({ providers }: ProviderBadgesProps) {
                       src={provider.logo_url}
                       alt={provider.name}
                       className="w-5 h-5 object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.textContent = provider.name.charAt(0).toUpperCase();
-                          parent.classList.add("text-xs", "font-bold", "text-gray-600");
-                        }
-                      }}
                     />
                   </div>
                   <span className="text-sm text-white font-medium">{provider.name}</span>

@@ -53,11 +53,11 @@ def _seed_static_movies(
                 if pid != provider_ids[provider_index] and random.random() < 0.3:
                     _record_movie_availability(db, movie, region, pid)
     else:
-        # Ensure existing movies have availability for this room's providers
-        # Only add if not already present (don't duplicate)
+        # For existing movies, ensure they have the first provider of this room
+        # This ensures rooms with different providers can still show movies
         for movie in db.query(Movie).all():
-            for provider_id in provider_ids:
-                _record_movie_availability(db, movie, region, provider_id)
+            # Only add the first provider to avoid marking all movies with all providers
+            _record_movie_availability(db, movie, region, provider_ids[0])
 
 
 def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
@@ -201,7 +201,7 @@ def _movie_to_response(db: Session, movie: Movie, region: str, provider_ids: lis
         "poster_url": movie.poster_url,
         "backdrop_url": movie.backdrop_url,
         "description": movie.description,
-        "rating": movie.rating / 10 if movie.rating else None,
+        "rating": movie.rating if movie.rating else None,
         "trailer_key": movie.trailer_key,
         "available_providers": providers,
     }
