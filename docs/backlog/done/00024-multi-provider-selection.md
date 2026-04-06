@@ -10,7 +10,7 @@ Actuellement, les utilisateurs ne peuvent choisir qu'un seul provider de streami
 - [x] UI permettant la sélection multiple de providers
 - [x] Filtrage des films disponibles sur AU MOINS un des providers sélectionnés
 - [x] Persistance de la sélection dans la room/session
-- [ ] Affichage visuel des providers associés à chaque film
+- [ ] Affichage visuel des providers associés à chaque film (dépriorisé)
 
 ## Implementation Plan
 
@@ -36,7 +36,7 @@ Actuellement, les utilisateurs ne peuvent choisir qu'un seul provider de streami
 - [x] Display selected providers count in UI
 - [x] Add visual feedback for multi-selection
 
-### Phase 4: Movie Display Enhancement (TODO)
+### Phase 4: Movie Display Enhancement (TODO - future)
 - [ ] Update MovieResponse to include available_providers list
 - [ ] Query MovieAvailability for each movie to get providers
 - [ ] Show provider icons on movie cards
@@ -46,7 +46,7 @@ Actuellement, les utilisateurs ne peuvent choisir qu'un seul provider de streami
 - [x] Backend tests for multi-provider rooms
 - [x] Frontend tests for multi-selection UI
 - [x] E2E test: create room with 2+ providers, verify movies from all providers
-- [ ] Test migration of existing rooms (manual QA)
+- [x] Test migration of existing rooms
 
 ## Technical Design
 
@@ -76,7 +76,7 @@ def discover_movies(
     provider_ids: List[int] | None = None,  # Changed from provider_id: int | None
     page: int = 1,
 ) -> dict:
-    # TMDB API supports comma-separated provider IDs
+    # TMDB API supports pipe-separated provider IDs
     if provider_ids:
         params["with_watch_providers"] = "|".join(str(p) for p in provider_ids)
 ```
@@ -85,7 +85,36 @@ def discover_movies(
 - Multiple providers use OR logic: `with_watch_providers=8|337` returns movies on Netflix OR Disney+
 - This matches our requirement: "films disponibles sur AU MOINS un des providers"
 
+## Test Results
+
+### Local API Test
+```bash
+curl -X POST http://localhost:8000/api/v1/rooms \
+  -H "Content-Type: application/json" \
+  -d '{"region": "FR", "provider_ids": [8, 337, 9]}'
+```
+Response:
+```json
+{
+  "id": 1,
+  "code": "9005",
+  "region": "FR",
+  "provider_ids": [8, 337, 9]
+}
+```
+
+### E2E Test (Preview)
+- ✅ Room created with 3 providers (Netflix, Prime Video, Disney+)
+- ✅ 50 movies returned
+- ✅ UI shows "3 platforms selected"
+- ✅ Checkmarks on selected providers
+
 ## Notes
 - SQLite supports JSON columns natively (JSON1 extension)
 - PostgreSQL has native JSON/JSONB support
 - Keep backward compatibility during migration
+- Security dependencies updated (aiohttp, pygments, requests)
+
+## Deployment
+- Preview: https://demo-pr-61.cinematch.umans.ai
+- Production: https://demo.cinematch.umans.ai
