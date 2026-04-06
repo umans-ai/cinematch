@@ -38,16 +38,23 @@ def _seed_static_movies(
     provider_ids = provider_ids or [8]
     if db.query(Movie).count() == 0:
         # First time - create all movies
-        for movie_data in STATIC_MOVIES:
+        for idx, movie_data in enumerate(STATIC_MOVIES):
             movie = Movie(**movie_data)
             db.add(movie)
             db.commit()
             db.refresh(movie)
-            # Record availability for the room's region/providers
-            for provider_id in provider_ids:
-                _record_movie_availability(db, movie, region, provider_id)
+            # Assign movie to one primary provider (round-robin) for realistic display
+            provider_index = idx % len(provider_ids)
+            _record_movie_availability(db, movie, region, provider_ids[provider_index])
+            # Also add 1-2 additional random providers for variety (30% chance each)
+            import random
+
+            for pid in provider_ids:
+                if pid != provider_ids[provider_index] and random.random() < 0.3:
+                    _record_movie_availability(db, movie, region, pid)
     else:
-        # Movies already exist - ensure availability is recorded for this region/providers
+        # Ensure existing movies have availability for this room's providers
+        # Only add if not already present (don't duplicate)
         for movie in db.query(Movie).all():
             for provider_id in provider_ids:
                 _record_movie_availability(db, movie, region, provider_id)
