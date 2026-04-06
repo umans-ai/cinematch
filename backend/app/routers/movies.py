@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 from typing import List
 
@@ -346,6 +347,9 @@ def get_movies(
 
     # Build response with provider info for each movie
     movie_responses = [_movie_to_response(db, m, region, provider_ids) for m in movies]
+
+    # Shuffle movies to mix providers (avoid sequential provider grouping)
+    random.shuffle(movie_responses)
 
     return MoviesWithRoomResponse(
         movies=[MovieResponse(**m) for m in movie_responses],

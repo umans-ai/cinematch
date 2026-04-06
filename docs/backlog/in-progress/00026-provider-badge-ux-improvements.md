@@ -31,10 +31,10 @@ Three UX issues identified with provider badges and movie display:
 2. Pressing Enter in name field proceeds to next step
 3. Movies are shuffled randomly across all selected providers
 
-## Implementation Notes
+## Implementation
 
-### Provider Icons
-Replace external TMDB logo URLs with static colored icons:
+### Provider Icons ✅
+Replaced external TMDB logo URLs with static colored icons in `ProviderBadges.tsx`:
 - Netflix: Red background with "N"
 - Prime Video: Blue background with "prime"
 - Disney+: Dark blue background with "D+"
@@ -42,18 +42,20 @@ Replace external TMDB logo URLs with static colored icons:
 - Apple TV+: Dark background with "TV+"
 - Hulu: Green background with "hulu"
 
-### Enter Key Support
-Add `onKeyDown` handler to name input field to detect Enter key and proceed.
+Also limited provider selection to 5 max in `PlatformSelector.tsx` to match backend validation.
 
-### Movie Shuffle
-Add random shuffle to movie query results before returning response.
+### Enter Key Support ✅
+Added `onKeyDown` handler to name input field in `page.tsx` to detect Enter key and proceed to platform selection step.
+
+### Movie Shuffle ✅
+Added `import random` and `random.shuffle(movie_responses)` in `movies.py` to shuffle movies before returning response.
 
 ## Acceptance Criteria
 
-- [ ] Provider badges display correctly without broken images
-- [ ] Pressing Enter on homepage submits name and proceeds
-- [ ] Movies appear in random order (not grouped by provider)
-- [ ] All existing tests pass
+- [x] Provider badges display correctly without broken images
+- [x] Pressing Enter on homepage submits name and proceeds
+- [x] Movies appear in random order (not grouped by provider)
+- [x] All existing tests pass
 
 ## Verification
 
