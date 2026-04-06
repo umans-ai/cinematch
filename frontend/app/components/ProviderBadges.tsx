@@ -12,6 +12,58 @@ interface ProviderBadgesProps {
   providers: Provider[];
 }
 
+// Icon components for each platform - reliable static icons instead of external images
+const NetflixIcon = () => (
+  <div className="w-5 h-5 rounded bg-red-600 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-xs">N</span>
+  </div>
+);
+
+const PrimeIcon = () => (
+  <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[8px]">prime</span>
+  </div>
+);
+
+const DisneyIcon = () => (
+  <div className="w-5 h-5 rounded bg-blue-900 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[7px]">D+</span>
+  </div>
+);
+
+const HBOIcon = () => (
+  <div className="w-5 h-5 rounded bg-purple-600 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[8px]">HBO</span>
+  </div>
+);
+
+const AppleIcon = () => (
+  <div className="w-5 h-5 rounded bg-gray-900 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[7px]">TV+</span>
+  </div>
+);
+
+const HuluIcon = () => (
+  <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[9px]">hulu</span>
+  </div>
+);
+
+const DefaultIcon = ({ name }: { name: string }) => (
+  <div className="w-5 h-5 rounded bg-gray-500 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-[8px]">{name.charAt(0)}</span>
+  </div>
+);
+
+const providerIcons: Record<number, React.ReactNode> = {
+  8: <NetflixIcon />,    // Netflix
+  9: <PrimeIcon />,      // Prime Video
+  337: <DisneyIcon />,   // Disney+
+  384: <HBOIcon />,      // HBO Max
+  350: <AppleIcon />,    // Apple TV+
+  15: <HuluIcon />,      // Hulu
+};
+
 export default function ProviderBadges({ providers }: ProviderBadgesProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -29,18 +81,12 @@ export default function ProviderBadges({ providers }: ProviderBadgesProps) {
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        {/* Primary provider - larger badge with logo */}
+        {/* Primary provider badge with icon */}
         <div
           className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/95 shadow-md"
           title={primaryProvider.name}
         >
-          <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-            <img
-              src={primaryProvider.logo_url}
-              alt={primaryProvider.name}
-              className="w-4 h-4 object-contain"
-            />
-          </div>
+          {providerIcons[primaryProvider.id] || <DefaultIcon name={primaryProvider.name} />}
           <span className="text-xs font-semibold text-gray-800">{primaryProvider.name}</span>
         </div>
 
@@ -60,13 +106,7 @@ export default function ProviderBadges({ providers }: ProviderBadgesProps) {
             <div className="space-y-2">
               {providers.map((provider) => (
                 <div key={provider.id} className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex items-center justify-center">
-                    <img
-                      src={provider.logo_url}
-                      alt={provider.name}
-                      className="w-5 h-5 object-contain"
-                    />
-                  </div>
+                  {providerIcons[provider.id] || <DefaultIcon name={provider.name} />}
                   <span className="text-sm text-white font-medium">{provider.name}</span>
                 </div>
               ))}

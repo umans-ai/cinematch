@@ -9,35 +9,24 @@ describe("ProviderBadges", () => {
     { id: 384, name: "HBO Max", logo_url: "https://image.tmdb.org/t/p/original/hbo.png" },
   ];
 
-  it("renders provider logos", () => {
+  it("renders primary provider name", () => {
     render(<ProviderBadges providers={mockProviders.slice(0, 2)} />);
 
-    const images = screen.getAllByRole("img");
-    expect(images).toHaveLength(2);
-    expect(images[0]).toHaveAttribute("alt", "Netflix");
-    expect(images[1]).toHaveAttribute("alt", "Disney+");
+    // Only the primary provider is shown directly
+    expect(screen.getByText("Netflix")).toBeInTheDocument();
   });
 
-  it("limits visible providers to maxVisible", () => {
-    render(<ProviderBadges providers={mockProviders} maxVisible={3} />);
+  it("shows additional count when more than one provider", () => {
+    render(<ProviderBadges providers={mockProviders} />);
 
-    const images = screen.getAllByRole("img");
-    expect(images).toHaveLength(3);
-
-    // Should show +1 for the remaining provider
-    expect(screen.getByText("+1")).toBeInTheDocument();
-  });
-
-  it("shows correct count for multiple remaining providers", () => {
-    const fiveProviders = [
-      ...mockProviders,
-      { id: 350, name: "Apple TV+", logo_url: "https://example.com/apple.png" },
-    ];
-    render(<ProviderBadges providers={fiveProviders} maxVisible={2} />);
-
-    const images = screen.getAllByRole("img");
-    expect(images).toHaveLength(2);
+    // Should show +3 for the remaining providers (4 total, 1 visible)
     expect(screen.getByText("+3")).toBeInTheDocument();
+  });
+
+  it("does not show count for single provider", () => {
+    render(<ProviderBadges providers={mockProviders.slice(0, 1)} />);
+
+    expect(screen.queryByText(/\+/)).not.toBeInTheDocument();
   });
 
   it("returns null when providers is empty", () => {
@@ -50,7 +39,7 @@ describe("ProviderBadges", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("displays provider names as tooltip", () => {
+  it("displays provider name with title attribute", () => {
     render(<ProviderBadges providers={mockProviders.slice(0, 1)} />);
 
     const badge = screen.getByTitle("Netflix");
