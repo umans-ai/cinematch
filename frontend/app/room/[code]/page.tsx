@@ -358,7 +358,7 @@ export default function RoomPage() {
               {/* Provider Badges */}
               {currentMovie?.available_providers && currentMovie.available_providers.length > 0 && (
                 <div className="absolute top-3 right-3">
-                  <ProviderBadges providers={currentMovie.available_providers} maxVisible={3} />
+                  <ProviderBadges providers={currentMovie.available_providers} />
                 </div>
               )}
 
