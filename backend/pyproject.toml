@@ -13,6 +13,7 @@ dependencies = [
     "psycopg[binary]==3.2.6",
     "alembic==1.15.2",
     "httpx>=0.27.2",
+    "structlog>=25.5.0",
 ]
 
 [dependency-groups]
