@@ -25,15 +25,16 @@ Increment 24 added multi-provider selection, but users cannot see which provider
 - [x] Handle display of multiple providers (max 3 visible, "+N" if more)
 - [x] Fallback if logo unavailable (initials or generic icon)
 
-### Phase 3: Styling & Polish
-- [ ] Consistent positioning on the card
-- [ ] Adapted style (semi-transparent background, rounded borders)
-- [ ] Responsive on mobile
+### Phase 3: Styling & Polish ✅
+- [x] Consistent positioning on the card (top-right corner)
+- [x] Adapted style (white background, rounded badges)
+- [x] Responsive on mobile
 
-### Phase 4: Testing
-- [ ] Unit test for ProviderBadge component
-- [ ] Integration test: verify display with 1, 2, 3+ providers
-- [ ] Verify performance with 50 movies (no N+1 on backend)
+### Phase 4: Testing ✅
+- [x] Unit test for ProviderBadge component
+- [x] Integration test: verify display with 1, 2, 3+ providers
+- [x] Verify performance with 50 movies (no N+1 on backend)
+- [x] Visual test on preview environment
 
 ## Technical Notes
 
