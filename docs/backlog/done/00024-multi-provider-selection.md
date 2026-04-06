@@ -10,7 +10,7 @@ Actuellement, les utilisateurs ne peuvent choisir qu'un seul provider de streami
 - [x] UI permettant la sélection multiple de providers
 - [x] Filtrage des films disponibles sur AU MOINS un des providers sélectionnés
 - [x] Persistance de la sélection dans la room/session
-- [ ] Affichage visuel des providers associés à chaque film (dépriorisé)
+- [x] Affichage visuel des providers associés à chaque film → voir [#00025](00025-movie-provider-badges.md)
 
 ## Implementation Plan
 
