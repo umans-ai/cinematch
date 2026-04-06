@@ -13,17 +13,17 @@ Increment 24 added multi-provider selection, but users cannot see which provider
 
 ## Implementation Plan
 
-### Phase 1: Backend - API Enhancement
-- [ ] Update `MovieResponse` schema to include `available_providers: List[ProviderInfo]`
-- [ ] Query `MovieAvailability` for each movie returned by the swipe session
-- [ ] Optimize with a single SQL query (JOIN or subquery) to avoid N+1
-- [ ] Add `provider_logo_path` and `provider_name` to the response
+### Phase 1: Backend - API Enhancement ✅
+- [x] Update `MovieResponse` schema to include `available_providers: List[ProviderInfo]`
+- [x] Query `MovieAvailability` for each movie returned by the swipe session
+- [x] Optimize with a single SQL query (JOIN or subquery) to avoid N+1
+- [x] Add `provider_logo_path` and `provider_name` to the response
 
-### Phase 2: Frontend - Movie Card Component
-- [ ] Create `ProviderBadge` component with logo + name
-- [ ] Integrate into `MovieCard` (as overlay or at bottom of card)
-- [ ] Handle display of multiple providers (max 3 visible, "+N" if more)
-- [ ] Fallback if logo unavailable (initials or generic icon)
+### Phase 2: Frontend - Movie Card Component ✅
+- [x] Create `ProviderBadge` component with logo + name
+- [x] Integrate into `MovieCard` (as overlay or at bottom of card)
+- [x] Handle display of multiple providers (max 3 visible, "+N" if more)
+- [x] Fallback if logo unavailable (initials or generic icon)
 
 ### Phase 3: Styling & Polish
 - [ ] Consistent positioning on the card
