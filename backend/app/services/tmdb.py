@@ -131,7 +131,8 @@ def get_movie_details(db: Session, tmdb_id: int) -> dict:
     if cached:
         return cached
 
-    data = _make_request(f"/movie/{tmdb_id}", {"append_to_response": "videos,credits"})
+    append = "videos,credits,watch/providers"
+    data = _make_request(f"/movie/{tmdb_id}", {"append_to_response": append})
 
     # Cache the response
     set_cache(db, cache_key, data)

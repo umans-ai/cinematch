@@ -16,24 +16,41 @@ In `backend/app/routers/movies.py`, `_ensure_movies_in_pool()` iterates all `pro
 Similarly, `_seed_static_movies()` adds all room providers to existing movies on subsequent room creations.
 
 ## Ship Criteria
-- [ ] Movies fetched from TMDB only get providers they're actually available on
-- [ ] Static fallback movies use round-robin assignment (not all providers)
-- [ ] Provider badges on movie cards reflect real availability
-- [ ] Tests document and verify the correct behavior
+- [x] Movies fetched from TMDB only get providers they're actually available on
+- [x] Static fallback movies use round-robin assignment (not all providers)
+- [x] Provider badges on movie cards reflect real availability
+- [x] Tests document and verify the correct behavior
 
 ## Implementation Plan
 
 ### Phase 1: TMDB provider extraction
-- [ ] Add `watch/providers` to `get_movie_details` append_to_response
-- [ ] Create `_extract_available_providers()` helper to parse TMDB watch/providers data
-- [ ] Test: TMDB details response includes watch/providers data
+- [x] Add `watch/providers` to `get_movie_details` append_to_response
+- [x] Create `_extract_available_providers()` helper to parse TMDB watch/providers data
+- [x] Test: TMDB details response includes watch/providers data
 
 ### Phase 2: Fix availability recording
-- [ ] Fix `_ensure_movies_in_pool()` to record only actual providers
-- [ ] Fix `_seed_static_movies()` to not blindly add all providers to existing movies
-- [ ] Test: movie with known providers only gets those recorded
-- [ ] Test: movie available on 1 of 3 room providers shows only that 1
+- [x] Fix `_ensure_movies_in_pool()` to record only actual providers
+- [x] Fix `_seed_static_movies()` to not blindly add all providers to existing movies
+- [x] Test: movie with known providers only gets those recorded
+- [x] Test: movie available on 1 of 3 room providers shows only that 1
 
 ### Phase 3: Verify end-to-end
-- [ ] Test: room with 5 providers → movies show varied provider counts
-- [ ] Test: provider badges match recorded availability
+- [x] Test: room with 5 providers → movies show varied provider counts
+- [x] Test: provider badges match recorded availability
+
+## Changes Made
+
+### `backend/app/services/tmdb.py`
+- Added `watch/providers` to `append_to_response` in `get_movie_details()` — no extra API call needed, data comes with the existing details fetch
+
+### `backend/app/routers/movies.py`
+- **New helper** `_extract_available_providers()`: parses TMDB's `watch/providers` response to get the intersection of actual flatrate providers and room providers
+- **Fixed** `_ensure_movies_in_pool()`: uses `_extract_available_providers()` to record only real providers (falls back to first room provider if TMDB data unavailable)
+- **Fixed** `_seed_static_movies()`: no longer adds all room providers to existing movies; instead, assigns via round-robin only for movies with no availability for the current room's providers
+
+### `backend/tests/test_provider_availability.py` (5 new tests)
+- `test_movie_only_gets_actual_providers` — Netflix-only movie doesn't get Disney+ badge
+- `test_existing_movie_preserves_providers_across_rooms` — second room doesn't corrupt first room's movies
+- `test_provider_badges_reflect_real_availability` — 5-provider room shows varied counts
+- `test_static_movies_dont_get_all_providers` — fallback uses round-robin, not "all providers"
+- `test_second_room_does_not_corrupt_existing_providers` — static fallback cross-room integrity
