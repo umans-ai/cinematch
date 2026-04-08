@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw, Share2 } from "lucide-react";
 import ProviderBadges from "../../components/ProviderBadges";
 
 interface Provider {
@@ -64,6 +64,8 @@ export default function RoomPage() {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -153,13 +155,51 @@ export default function RoomPage() {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
   const copyRoomCode = async () => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+    }
+  };
+
+  const shareRoom = async () => {
+    const roomUrl = `${window.location.origin}/room/${code}`;
+    const shareData = {
+      title: "Join my CineMatch room",
+      text: `Let's find a movie to watch together! Join my room with code ${code}`,
+      url: roomUrl,
+    };
+
+    // Try native share API first (mobile-friendly)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or error - ignore
+        if (err instanceof Error && err.name !== "AbortError") {
+          console.error("Share failed:", err);
+        }
+      }
+    } else {
+      // Fallback: copy link to clipboard
+      try {
+        await navigator.clipboard.writeText(roomUrl);
+        setCopiedLink(true);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopiedLink(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy link:", err);
+      }
     }
   };
 
@@ -275,22 +315,42 @@ export default function RoomPage() {
           Cine<span className="text-primary">Match</span>
         </button>
 
-        <button
-          onClick={copyRoomCode}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm hover:bg-secondary/80 transition-colors"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-primary" />
-              <span>Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              <span className="font-mono tracking-wider">{code}</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={copyRoomCode}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm hover:bg-secondary/80 transition-colors"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-primary" />
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span className="font-mono tracking-wider">{code}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={shareRoom}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity"
+            title="Share room"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-4 h-4" />
+                <span className="hidden sm:inline">Link copied</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
+              </>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Progress */}
