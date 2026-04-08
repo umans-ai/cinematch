@@ -12,38 +12,41 @@ interface PlatformSelectorProps {
 }
 
 // Enhanced colored icons for each platform with gradients
+const iconBase =
+  "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md transition-all group-hover:shadow-lg";
+
 const NetflixIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-md shadow-red-600/30 transition-all group-hover:shadow-lg group-hover:shadow-red-600/40">
+  <div className={`${iconBase} from-red-600 to-red-700 shadow-red-600/30 group-hover:shadow-red-600/40`}>
     <span className="text-white font-bold text-xl">N</span>
   </div>
 );
 
 const PrimeIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/30 transition-all group-hover:shadow-lg group-hover:shadow-blue-500/40">
+  <div className={`${iconBase} from-blue-500 to-blue-600 shadow-blue-500/30 group-hover:shadow-blue-500/40`}>
     <span className="text-white font-bold text-sm">prime</span>
   </div>
 );
 
 const DisneyIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-900 to-blue-950 flex items-center justify-center shadow-md shadow-blue-900/30 transition-all group-hover:shadow-lg group-hover:shadow-blue-900/40">
+  <div className={`${iconBase} from-blue-900 to-blue-950 shadow-blue-900/30 group-hover:shadow-blue-900/40`}>
     <span className="text-white font-bold text-xs">Disney+</span>
   </div>
 );
 
 const HBOIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-md shadow-purple-600/30 transition-all group-hover:shadow-lg group-hover:shadow-purple-600/40">
+  <div className={`${iconBase} from-purple-600 to-purple-700 shadow-purple-600/30 group-hover:shadow-purple-600/40`}>
     <span className="text-white font-bold text-xs">HBO</span>
   </div>
 );
 
 const AppleIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shadow-md shadow-gray-900/30 transition-all group-hover:shadow-lg group-hover:shadow-gray-900/40">
+  <div className={`${iconBase} from-gray-900 to-black shadow-gray-900/30 group-hover:shadow-gray-900/40`}>
     <span className="text-white font-bold text-xs">TV+</span>
   </div>
 );
 
 const HuluIcon = () => (
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md shadow-green-500/30 transition-all group-hover:shadow-lg group-hover:shadow-green-500/40">
+  <div className={`${iconBase} from-green-500 to-green-600 shadow-green-500/30 group-hover:shadow-green-500/40`}>
     <span className="text-white font-bold text-sm">hulu</span>
   </div>
 );
@@ -94,23 +97,13 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
               disabled={isDisabled}
               className={`group relative flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 overflow-hidden ${
                 isSelected
-                  ? "border-primary bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg shadow-primary/20 scale-[1.02]"
+                  ? "border-primary bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg shadow-primary/20 motion-safe:hover:scale-[1.02]"
                   : isDisabled
                     ? "border-input/50 opacity-40 cursor-not-allowed"
-                    : "border-input hover:border-primary/50 hover:shadow-md hover:scale-[1.02] active:scale-100"
+                    : "border-input hover:border-primary/50 hover:shadow-md motion-safe:hover:scale-[1.02] active:scale-100"
               }`}
             >
-              {/* Animated background gradient on hover */}
-              {!isDisabled && !isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              )}
-
-              {/* Selected indicator glow */}
-              {isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent animate-pulse" />
-              )}
-
-              <div className="relative z-10 transition-transform duration-200 group-hover:scale-110">
+              <div className="relative z-10 transition-transform duration-200 motion-safe:group-hover:scale-110">
                 {providerIcons[provider.id]}
               </div>
 
@@ -142,8 +135,12 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
         })}
       </div>
 
-      <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-muted/50">
-        <div className="flex gap-1">
+      <div
+        className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-muted/50"
+        role="status"
+        aria-label={`${selectedProviderIds.length} of ${MAX_PROVIDERS} platforms selected`}
+      >
+        <div className="flex gap-1" aria-hidden="true">
           {Array.from({ length: MAX_PROVIDERS }).map((_, i) => (
             <div
               key={i}
@@ -159,7 +156,7 @@ export default function PlatformSelector({ selectedProviderIds, onSelect }: Plat
           {selectedProviderIds.length} / {MAX_PROVIDERS}
         </p>
         {selectedProviderIds.length >= MAX_PROVIDERS && (
-          <span className="text-xs font-semibold text-amber-600 animate-in fade-in-50 duration-200">
+          <span className="text-xs font-semibold text-amber-600">
             Max
           </span>
         )}
