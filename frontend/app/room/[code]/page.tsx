@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
+import { Heart, X, Info, Star, Play, RefreshCw } from "lucide-react";
 import ProviderBadges from "../../components/ProviderBadges";
+import ShareButton from "../../components/ShareButton";
 
 interface Provider {
   id: number;
@@ -59,21 +60,31 @@ export default function RoomPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [loading, setLoading] = useState(true);
   const [finished, setFinished] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [previousMatchIds, setPreviousMatchIds] = useState<Set<number>>(new Set());
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [showJoinPrompt, setShowJoinPrompt] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
 
   const fetchMovies = useCallback(async () => {
     try {
       const response = await fetch(`/api/v1/movies?code=${code}`);
+      if (response.status === 401 || response.status === 403) {
+        // User is not in the room, show join prompt
+        setShowJoinPrompt(true);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setMovies(data.movies);
       setRoom(data.room);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch movies:", error);
+      setShowJoinPrompt(true);
+      setLoading(false);
     }
   }, [code]);
 
@@ -153,19 +164,34 @@ export default function RoomPage() {
     }
   };
 
-  const copyRoomCode = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
   const openTrailer = (trailerKey?: string) => {
     if (trailerKey) {
       window.open(`https://www.youtube.com/watch?v=${trailerKey}`, "_blank");
+    }
+  };
+
+  const handleJoinRoom = async () => {
+    if (!userName.trim()) return;
+    setIsJoining(true);
+
+    try {
+      const response = await fetch(`/api/v1/rooms/${code}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: userName.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to join room");
+      }
+
+      setShowJoinPrompt(false);
+      await fetchMovies();
+    } catch (error) {
+      console.error("Failed to join room:", error);
+      alert("Failed to join room. It may be full or invalid.");
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -175,6 +201,60 @@ export default function RoomPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground">Loading movies...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (showJoinPrompt) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Join Room <span className="text-primary font-mono">{code}</span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your name to start swiping movies together
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="join-name">
+                Your name
+              </label>
+              <input
+                id="join-name"
+                type="text"
+                placeholder="Enter your name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && userName.trim()) {
+                    handleJoinRoom();
+                  }
+                }}
+                className="w-full h-12 px-4 rounded-xl border border-input bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                autoFocus
+              />
+            </div>
+
+            <button
+              onClick={handleJoinRoom}
+              disabled={!userName.trim() || isJoining}
+              className="w-full h-12 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-primary/20"
+            >
+              {isJoining ? "Joining..." : "Join room"}
+            </button>
+
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="w-full h-12 px-4 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Go back
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -275,22 +355,7 @@ export default function RoomPage() {
           Cine<span className="text-primary">Match</span>
         </button>
 
-        <button
-          onClick={copyRoomCode}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm hover:bg-secondary/80 transition-colors"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-primary" />
-              <span>Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              <span className="font-mono tracking-wider">{code}</span>
-            </>
-          )}
-        </button>
+        <ShareButton roomCode={code} />
       </header>
 
       {/* Progress */}
