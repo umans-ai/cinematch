@@ -54,12 +54,23 @@ def _seed_static_movies(
                 if pid != provider_ids[provider_index] and random.random() < 0.3:
                     _record_movie_availability(db, movie, region, pid)
     else:
-        # For existing movies, ensure they have all providers of this room
-        # This ensures rooms with different providers can still show movies
-        for movie in db.query(Movie).all():
-            # Add all room providers to each movie for variety
-            for pid in provider_ids:
-                _record_movie_availability(db, movie, region, pid)
+        # Movies exist but may not be available for this room's providers.
+        # Static movies have no TMDB data, so we assign via round-robin
+        # only for movies that have NO availability for any of the room's providers.
+        movies = db.query(Movie).all()
+        for idx, movie in enumerate(movies):
+            has_room_provider = (
+                db.query(MovieAvailability)
+                .filter(
+                    MovieAvailability.movie_id == movie.id,
+                    MovieAvailability.region == region,
+                    MovieAvailability.provider_id.in_(provider_ids),
+                )
+                .first()
+            )
+            if not has_room_provider:
+                provider_index = idx % len(provider_ids)
+                _record_movie_availability(db, movie, region, provider_ids[provider_index])
 
 
 def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
@@ -134,6 +145,27 @@ def _tmdb_to_movie(db: Session, tmdb_movie: dict) -> Movie:
     db.refresh(movie)
 
     return movie
+
+
+def _extract_available_providers(
+    db: Session, tmdb_id: int, region: str, room_provider_ids: list[int]
+) -> list[int]:
+    """Get the subset of room providers where a movie is actually streaming.
+
+    Uses TMDB's watch/providers data (included in movie details) to determine
+    which providers actually offer this movie in the given region. Returns only
+    provider IDs that are both in the TMDB flatrate list AND in the room's
+    selected providers.
+    """
+    try:
+        details = get_movie_details(db, tmdb_id)
+        watch_providers = details.get("watch/providers", {}).get("results", {})
+        region_data = watch_providers.get(region, {})
+        flatrate = region_data.get("flatrate", [])
+        tmdb_provider_ids = {p["provider_id"] for p in flatrate}
+        return [pid for pid in room_provider_ids if pid in tmdb_provider_ids]
+    except Exception:
+        return []
 
 
 def _record_movie_availability(db: Session, movie: Movie, region: str, provider_id: int) -> None:
@@ -254,13 +286,19 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
                 # Check if movie already exists
                 existing = db.query(Movie).filter(Movie.tmdb_id == tmdb_movie["id"]).first()
                 if existing:
-                    # Record availability for each provider
-                    for provider_id in provider_ids:
+                    # Record only the providers this movie is actually on
+                    actual_providers = _extract_available_providers(
+                        db, int(tmdb_movie["id"]), region, provider_ids
+                    )
+                    for provider_id in actual_providers or [provider_ids[0]]:
                         _record_movie_availability(db, existing, region, provider_id)
                 else:
-                    # Create new movie and record availability for each provider
+                    # Create new movie and record only actual providers
                     movie = _tmdb_to_movie(db, tmdb_movie)
-                    for provider_id in provider_ids:
+                    actual_providers = _extract_available_providers(
+                        db, int(tmdb_movie["id"]), region, provider_ids
+                    )
+                    for provider_id in actual_providers or [provider_ids[0]]:
                         _record_movie_availability(db, movie, region, provider_id)
                     fetched_count += 1
 
