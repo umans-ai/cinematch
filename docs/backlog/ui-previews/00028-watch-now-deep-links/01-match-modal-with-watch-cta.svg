@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 800" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#141414"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="poster" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a2a2a"/>
+      <stop offset="1" stop-color="#1a1a1a"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#e50914"/>
+    </marker>
+    <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="2.5" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1040" height="800" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="520" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">CineMatch — “Watch now” deep link</text>
+  <text x="520" y="66" text-anchor="middle" font-size="13" fill="#888">Closing the match → watch loop · tagline today: “Stop scrolling, start watching”</text>
+
+  <!-- ============ BEFORE ============ -->
+  <text x="200" y="104" text-anchor="middle" font-size="12" font-weight="600" fill="#666" letter-spacing="2">TODAY</text>
+  <!-- phone frame -->
+  <rect x="50" y="118" width="300" height="640" rx="30" fill="#0a0a0a" stroke="#262626" stroke-width="2"/>
+  <rect x="58" y="126" width="284" height="624" rx="24" fill="#0d0d0d"/>
+
+  <!-- modal card (current: dead-ends at Continue) -->
+  <rect x="84" y="210" width="232" height="330" rx="20" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+  <circle cx="200" cy="256" r="24" fill="#e5091433"/>
+  <path transform="translate(188,244)" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#e50914"/>
+  <text x="200" y="310" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">It’s a match!</text>
+  <text x="200" y="334" text-anchor="middle" font-size="12" fill="#888">You and your friends liked</text>
+
+  <rect x="104" y="354" width="192" height="64" rx="12" fill="#0a0a0a" stroke="#2a2a2a"/>
+  <text x="116" y="380" font-size="15" font-weight="600" fill="#fff">Inception</text>
+  <text x="116" y="400" font-size="12" fill="#888">2010 · Sci-Fi</text>
+
+  <rect x="104" y="440" width="192" height="44" rx="10" fill="#e50914"/>
+  <text x="200" y="468" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Continue</text>
+
+  <!-- dead-end annotation -->
+  <text x="200" y="572" text-anchor="middle" font-size="11" fill="#e50914">↑ dead end</text>
+  <text x="200" y="590" text-anchor="middle" font-size="10.5" fill="#888">user leaves app, opens Netflix,</text>
+  <text x="200" y="605" text-anchor="middle" font-size="10.5" fill="#888">searches, plays — manually</text>
+
+  <!-- ============ ARROW ============ -->
+  <line x1="362" y1="430" x2="586" y2="430" stroke="#e50914" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="474" y="418" text-anchor="middle" font-size="11" font-weight="600" fill="#888" letter-spacing="2">PROPOSED</text>
+
+  <!-- ============ AFTER ============ -->
+  <text x="740" y="104" text-anchor="middle" font-size="12" font-weight="600" fill="#e50914" letter-spacing="2">PROPOSED</text>
+  <rect x="590" y="118" width="300" height="640" rx="30" fill="#0a0a0a" stroke="#262626" stroke-width="2"/>
+  <rect x="598" y="126" width="284" height="624" rx="24" fill="#0d0d0d"/>
+
+  <!-- modal card (proposed) -->
+  <rect x="624" y="180" width="232" height="420" rx="20" fill="#141414" stroke="#2a2a2a" stroke-width="1.5"/>
+  <circle cx="740" cy="226" r="24" fill="#e5091433"/>
+  <path transform="translate(728,214)" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="#e50914"/>
+  <text x="740" y="280" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">It’s a match!</text>
+  <text x="740" y="304" text-anchor="middle" font-size="12" fill="#888">You and your friends liked</text>
+
+  <!-- movie card w/ poster thumb -->
+  <rect x="644" y="324" width="192" height="88" rx="12" fill="#0a0a0a" stroke="#2a2a2a"/>
+  <rect x="656" y="336" width="44" height="64" rx="6" fill="url(#poster)"/>
+  <path transform="translate(670,360)" d="M6 4l10 6-10 6z" fill="#ffffff99"/>
+  <text x="712" y="362" font-size="15" font-weight="600" fill="#fff">Inception</text>
+  <text x="712" y="382" font-size="12" fill="#888">2010 · Sci-Fi</text>
+  <text x="712" y="398" font-size="10" fill="#555">★ 8.8 · 2h 28m</text>
+
+  <!-- available on -->
+  <text x="644" y="436" font-size="10" font-weight="600" fill="#666" letter-spacing="1.5">AVAILABLE ON</text>
+  <!-- Netflix chip (clickable) -->
+  <rect x="644" y="444" width="104" height="28" rx="14" fill="#ffffff"/>
+  <rect x="652" y="451" width="14" height="14" rx="3" fill="#e50914"/>
+  <text x="659" y="462" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">N</text>
+  <text x="672" y="463" font-size="12" font-weight="600" fill="#111">Netflix</text>
+  <!-- +2 chip -->
+  <rect x="754" y="444" width="44" height="28" rx="14" fill="#000000b3" stroke="#2a2a2a"/>
+  <text x="776" y="463" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">+2</text>
+
+  <!-- PRIMARY CTA: Watch on Netflix -->
+  <rect x="644" y="488" width="192" height="48" rx="11" fill="#e50914"/>
+  <path transform="translate(664,506)" d="M5 3l12 7-12 7z" fill="#fff"/>
+  <text x="752" y="518" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Watch on Netflix</text>
+
+  <!-- secondary: continue swiping -->
+  <rect x="644" y="548" width="192" height="38" rx="10" fill="none" stroke="#2a2a2a"/>
+  <text x="740" y="572" text-anchor="middle" font-size="13" fill="#ccc">Continue swiping</text>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <!-- callout 1: chips are links -->
+  <line x1="754" y1="458" x2="940" y2="410" stroke="#888" stroke-width="1" stroke-dasharray="3 3" marker-start="url(#dot)"/>
+  <text x="946" y="406" font-size="11" fill="#aaa">chips become</text>
+  <text x="946" y="420" font-size="11" fill="#aaa">&lt;a target=_blank&gt;</text>
+
+  <!-- callout 2: deep link -->
+  <line x1="836" y1="512" x2="940" y2="512" stroke="#888" stroke-width="1" stroke-dasharray="3 3" marker-start="url(#dot)"/>
+  <text x="946" y="508" font-size="11" fill="#e50914" font-weight="600">deep link</text>
+  <text x="946" y="522" font-size="10" fill="#888">netflix.com/title/…</text>
+
+  <!-- callout 3: completion metric -->
+  <line x1="740" y1="600" x2="940" y2="620" stroke="#888" stroke-width="1" stroke-dasharray="3 3" marker-start="url(#dot)"/>
+  <text x="946" y="616" font-size="11" fill="#aaa">new measurable:</text>
+  <text x="946" y="630" font-size="11" fill="#aaa">match → tap Watch</text>
+
+  <!-- bottom note -->
+  <rect x="50" y="752" width="940" height="32" rx="8" fill="#141414" stroke="#222"/>
+  <text x="520" y="772" text-anchor="middle" font-size="12" fill="#aaa">
+    Data already fetched: TMDB <tspan fill="#e50914" font-weight="600">watch/providers.link</tspan> field is read today but discarded — store it on MovieAvailability, render it here.
+  </text>
+</svg>
