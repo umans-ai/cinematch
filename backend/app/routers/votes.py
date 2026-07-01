@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Movie, Participant, Room, Vote
-from ..schemas import MatchResponse, VoteCreate, VoteResponse
+from ..routers.movies import _movie_to_response
+from ..schemas import MatchResponse, MovieResponse, VoteCreate, VoteResponse
 
 router = APIRouter()
 
@@ -70,6 +71,10 @@ def get_matches(code: str, db: Session = Depends(get_db)):
     if len(participant_ids) < 2:
         return []
 
+    # Room region/providers drive provider badges and the watch link on matched movies.
+    region: str = str(room.region)
+    provider_ids: list[int] = room.provider_ids if room.provider_ids else [8]  # type: ignore
+
     # Get all movies voted liked by each participant
     matches = []
     movies = db.query(Movie).all()
@@ -85,9 +90,10 @@ def get_matches(code: str, db: Session = Depends(get_db)):
 
         # Check if all participants liked this movie
         if set(participant_ids).issubset(set(voter_ids)):
+            movie_data = _movie_to_response(db, movie, region, provider_ids)
             matches.append(
                 MatchResponse(
-                    movie=movie,
+                    movie=MovieResponse(**movie_data),
                     participants=[p.name for p in participants],  # type: ignore
                 )
             )

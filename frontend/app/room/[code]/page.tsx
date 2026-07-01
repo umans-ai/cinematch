@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw, Share2 } from "lucide-react";
+import { Check, Copy, Heart, X, Info, Star, Play, RefreshCw, Share2, ExternalLink } from "lucide-react";
 import ProviderBadges from "../../components/ProviderBadges";
 
 interface Provider {
@@ -22,6 +22,7 @@ interface Movie {
   rating?: number; // Stored as integer (e.g., 87 for 8.7)
   trailer_key?: string;
   available_providers: Provider[];
+  watch_link?: string | null; // TMDB region-level "where to watch" page URL
 }
 
 interface RoomInfo {
@@ -259,12 +260,29 @@ export default function RoomPage() {
               {matches.map((match, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl border border-input bg-card"
+                  className="p-4 rounded-xl border border-input bg-card space-y-3"
                 >
-                  <h3 className="font-medium">{match.movie.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {match.movie.year} • {match.movie.genre}
-                  </p>
+                  <div>
+                    <h3 className="font-medium">{match.movie.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {match.movie.year} • {match.movie.genre}
+                    </p>
+                  </div>
+                  {match.movie.available_providers &&
+                    match.movie.available_providers.length > 0 && (
+                      <ProviderBadges providers={match.movie.available_providers} />
+                    )}
+                  {match.movie.watch_link && (
+                    <a
+                      href={match.movie.watch_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Where to watch
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
@@ -497,19 +515,42 @@ export default function RoomPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-input bg-background">
-              <h3 className="font-semibold">{showMatch.movie.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {showMatch.movie.year} • {showMatch.movie.genre}
-              </p>
+            <div className="p-4 rounded-xl border border-input bg-background space-y-3">
+              <div>
+                <h3 className="font-semibold">{showMatch.movie.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {showMatch.movie.year} • {showMatch.movie.genre}
+                </p>
+              </div>
+              {showMatch.movie.available_providers &&
+                showMatch.movie.available_providers.length > 0 && (
+                  <ProviderBadges providers={showMatch.movie.available_providers} />
+                )}
             </div>
 
-            <button
-              onClick={() => setShowMatch(null)}
-              className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </button>
+            <div className="space-y-2">
+              {showMatch.movie.watch_link && (
+                <a
+                  href={showMatch.movie.watch_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-12 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Where to watch
+                </a>
+              )}
+              <button
+                onClick={() => setShowMatch(null)}
+                className={`w-full h-12 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity ${
+                  showMatch.movie.watch_link
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                Continue
+              </button>
+            </div>
           </div>
         </div>
       )}
