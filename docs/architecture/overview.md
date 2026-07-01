@@ -103,10 +103,11 @@ flowchart TB
         end
 
         subgraph Models ["SQLAlchemy Models"]
-            M1["Room<br/>id, code, is_active"]
+            M1["Room<br/>id, code, is_active, region, provider_ids"]
             M2["Participant<br/>id, room_id, name, session_id"]
             M3["Movie<br/>id, title, year, genre, description"]
             M4["Vote<br/>id, room_id, participant_id, movie_id, liked"]
+            M5["MovieAvailability<br/>id, movie_id, region, provider_id, link"]
         end
 
         DB[("PostgreSQL Database")]
@@ -115,18 +116,20 @@ flowchart TB
     R1 --> M1
     R1 --> M2
     R2 --> M3
+    R2 --> M5
     R3 --> M4
     M1 --> DB
     M2 --> DB
     M3 --> DB
     M4 --> DB
+    M5 --> DB
 
     classDef router fill:#e67e22,stroke:#d35400,color:#fff,stroke-width:2px
     classDef model fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
     classDef db fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
 
     class R1,R2,R3 router
-    class M1,M2,M3,M4 model
+    class M1,M2,M3,M4,M5 model
     class DB db
 ```
 

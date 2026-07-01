@@ -31,4 +31,9 @@ CineMatch turns movie selection into a collaborative game:
 
 - Time from room creation to match: target < 5 minutes
 - Completion rate: % of rooms that find a match
+- Watch-through: % of matches where a user taps "Where to watch" (match → watching)
 - Return rate: % of users who create multiple rooms
+
+> Watch-through closes the loop on the "Stop scrolling, start watching" promise: a match now
+> links straight to TMDB's "where to watch" page via the region-level link persisted on
+> `MovieAvailability`. Direct per-provider deep links (Netflix/Prime) remain a future increment.
