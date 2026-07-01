@@ -63,6 +63,7 @@ class MovieResponse(BaseModel):
     rating: Optional[float] = None  # TMDB vote_average
     trailer_key: Optional[str] = None  # YouTube trailer key
     available_providers: List[ProviderInfo] = []  # Providers where movie is available
+    watch_link: Optional[str] = None  # TMDB region-level "where to watch" page URL
 
     class Config:
         from_attributes = True

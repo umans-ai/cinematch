@@ -168,8 +168,30 @@ def _extract_available_providers(
         return []
 
 
-def _record_movie_availability(db: Session, movie: Movie, region: str, provider_id: int) -> None:
-    """Record that a movie is available for a specific region/provider."""
+def _extract_watch_link(db: Session, tmdb_id: int, region: str) -> str | None:
+    """Get TMDB's region-level "where to watch" link for a movie, if any.
+
+    TMDB's watch/providers response includes a region-level ``link`` (a page listing
+    where to watch the movie in that region). Returns None when the region is missing,
+    has no link, or the details fetch fails.
+    """
+    try:
+        details = get_movie_details(db, tmdb_id)
+        watch_providers = details.get("watch/providers", {}).get("results", {})
+        region_data = watch_providers.get(region, {})
+        return region_data.get("link")
+    except Exception:
+        return None
+
+
+def _record_movie_availability(
+    db: Session, movie: Movie, region: str, provider_id: int, link: str | None = None
+) -> None:
+    """Record that a movie is available for a specific region/provider.
+
+    ``link`` is the TMDB region-level watch link; it is stored on creation and refreshed
+    on re-sync when TMDB changes it.
+    """
     existing = (
         db.query(MovieAvailability)
         .filter(
@@ -184,8 +206,13 @@ def _record_movie_availability(db: Session, movie: Movie, region: str, provider_
             movie_id=movie.id,
             region=region,
             provider_id=provider_id,
+            link=link,
         )
         db.add(availability)
+        db.commit()
+    elif link is not None and existing.link != link:
+        # Re-sync: TMDB re-indexed the region and the watch link changed.
+        existing.link = link
         db.commit()
 
 
@@ -223,6 +250,27 @@ def _get_movie_providers(
     return providers
 
 
+def _get_movie_watch_link(
+    db: Session, movie: Movie, region: str, room_provider_ids: list[int]
+) -> str | None:
+    """Get the TMDB region-level watch link for a movie, filtered by room providers.
+
+    The link is region-level, so it is identical across a movie's availability rows for a
+    given region; we return the first non-null one among the room's selected providers.
+    """
+    row = (
+        db.query(MovieAvailability.link)
+        .filter(
+            MovieAvailability.movie_id == movie.id,
+            MovieAvailability.region == region,
+            MovieAvailability.provider_id.in_(room_provider_ids),
+            MovieAvailability.link.isnot(None),
+        )
+        .first()
+    )
+    return row[0] if row else None
+
+
 def _movie_to_response(db: Session, movie: Movie, region: str, provider_ids: list[int]) -> dict:
     """Convert a Movie model to a MovieResponse dict with provider info."""
     providers = _get_movie_providers(db, movie, region, provider_ids)
@@ -238,6 +286,7 @@ def _movie_to_response(db: Session, movie: Movie, region: str, provider_ids: lis
         "rating": movie.rating if movie.rating else None,
         "trailer_key": movie.trailer_key,
         "available_providers": providers,
+        "watch_link": _get_movie_watch_link(db, movie, region, provider_ids),
     }
 
 
@@ -290,16 +339,18 @@ def _ensure_movies_in_pool(db: Session, room: Room, count: int = MIN_MOVIES_IN_P
                     actual_providers = _extract_available_providers(
                         db, int(tmdb_movie["id"]), region, provider_ids
                     )
+                    watch_link = _extract_watch_link(db, int(tmdb_movie["id"]), region)
                     for provider_id in actual_providers or [provider_ids[0]]:
-                        _record_movie_availability(db, existing, region, provider_id)
+                        _record_movie_availability(db, existing, region, provider_id, watch_link)
                 else:
                     # Create new movie and record only actual providers
                     movie = _tmdb_to_movie(db, tmdb_movie)
                     actual_providers = _extract_available_providers(
                         db, int(tmdb_movie["id"]), region, provider_ids
                     )
+                    watch_link = _extract_watch_link(db, int(tmdb_movie["id"]), region)
                     for provider_id in actual_providers or [provider_ids[0]]:
-                        _record_movie_availability(db, movie, region, provider_id)
+                        _record_movie_availability(db, movie, region, provider_id, watch_link)
                     fetched_count += 1
 
                 if fetched_count >= needed:

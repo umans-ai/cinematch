@@ -93,6 +93,8 @@ class MovieAvailability(Base):
     movie_id = Column(Integer, ForeignKey("movies.id"), nullable=False)
     region = Column(String(2), nullable=False)  # ISO 3166-1 alpha-2 country code
     provider_id = Column(Integer, nullable=False)  # TMDB watch provider ID
+    # TMDB region-level "where to watch" page URL (same for every provider in the region)
+    link = Column(String(500), nullable=True)
 
     movie = relationship("Movie", back_populates="availabilities")
 
