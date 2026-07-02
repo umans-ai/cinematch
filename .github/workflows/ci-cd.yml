@@ -47,7 +47,8 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: "latest"
+          # Pinned: pnpm@10 requires Node >=22.13, but the workflow runs Node 20
+          version: "9.15.9"
 
       - name: Set up Node
         uses: actions/setup-node@v4
